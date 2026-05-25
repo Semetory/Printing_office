@@ -1,4 +1,4 @@
-// api.js - исправленный
+// api.js
 
 const API_BASE_URL = '/api';
 
@@ -49,3 +49,9 @@ async function deleteOrderOnServer(orderNumber) {
     if (!response.ok) throw new Error('Ошибка удаления заказа');
     return true;
 }
+
+window.sendOrderToServer = sendOrderToServer;
+window.getOrderByNumber = getOrderByNumber;
+window.getAllOrders = getAllOrders;
+window.updateOrderStatusOnServer = updateOrderStatusOnServer;
+window.deleteOrderOnServer = deleteOrderOnServer;

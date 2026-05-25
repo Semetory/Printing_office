@@ -1,75 +1,147 @@
 <!DOCTYPE html>
 <html lang="ru">
-	<head>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>Админ панель</title>
-		<link rel="stylesheet" href="/css/style.css">
-        <script src="/js/api.js"></script>
-        <script src="/js/admin.js"></script>
-	</head>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ панель</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/api.js"></script>
+    <script src="/js/admin.js"></script>
+    <style>
+        /* Стили для таблицы */
+        .orders-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .orders-table th {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: bold;
+            border: 1px solid #45a049;
+        }
+
+        .orders-table td {
+            padding: 10px 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        .orders-table tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .orders-table tbody tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        /* Стили для select в таблице */
+        .status-select {
+            padding: 5px 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            background-color: white;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .status-select:hover {
+            border-color: #4CAF50;
+        }
+
+        /* Стили для кнопки удаления */
+        .delete-btn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .delete-btn:hover {
+            background-color: #d32f2f;
+        }
+
+        /* Адаптивность */
+        .table-responsive {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+    </style>
+</head>
 <body>
 
-    <header>
-        <div class="container header-container">
-            <a href="index.html" class="logo">Типография</a>
-            <nav>
-                <ul>
-                </ul>
-            </nav>
-        </div>
-    </header>
+<header>
+    <div class="container header-container">
+        <a href="index.html" class="logo">Типография</a>
+        <nav>
+            <ul>
+            </ul>
+        </nav>
+    </div>
+</header>
 
 <main class="container">
+    <h1 class="page-title">Админ панель</h1>
 
-    <h1 class="page-title">Форма расчёта стоимости</h1>
+    <section class="admin-panel">
+        <div class="price-block">
+            <h3>Загрузка прайс-листа</h3>
+            <input type="file" id="priceFile" accept=".json,.csv,.txt">
+            <button id="uploadPriceBtn">Загрузить файл с ценами</button>
+            <div id="uploadStatus" style="margin-top: 10px; font-size: 14px;"></div>
+        </div>
 
-	<section class="admin-panel">
-
-		<h2>Админ-панель</h2>
-		<div class="price-block">
-			<h3>Обновление прайса</h3>
-			<label>Цена за 1 лист:</label>
-			<input type="number" id="pricePerSheet" placeholder="Введите цену">
-			<button id="savePriceBtn">Сохранить цену</button>
-		</div>
-
-		<div class="orders-block">
-			<h3>Все заказы</h3>
-            <table>
-                <thead>
-                <tr>
-                    <th>№ заказа</th>
-                    <th>Клиент</th>
-                    <th>Телефон</th>
-                    <th>Формат</th>
-                    <th>Бумага</th>
-                    <th>Кол-во</th>
-                    <th>Стоимость</th>
-                    <th>Статус</th>
-                    <th>Изменить</th>
-                    <th>Удалить</th>
-                </tr>
-                </thead>
-                <tbody id="ordersTableBody"></tbody>
-            </table>
-		</div>
-	</section>
-
-</main>
-
-    <footer>
-        <div class="container footer-container">
-            <div class="footer-info">
-                <p>Типография © 2025</p>
-                <p>Качество печати гарантируем</p>
-            </div>
-            <div class="footer-links">
-                <p>Телефон: +7 (495) 123-45-67</p>
-                <p>Email: info@profprint.ru</p>
+        <div class="orders-block">
+            <h3>Все заказы</h3>
+            <div class="table-responsive">
+                <table class="orders-table">
+                    <thead>
+                    <tr>
+                        <th>№ заказа</th>
+                        <th>Клиент</th>
+                        <th>Телефон</th>
+                        <th>Формат</th>
+                        <th>Бумага</th>
+                        <th>Кол-во</th>
+                        <th>Стоимость</th>
+                        <th>Статус</th>
+                        <th>Изменить</th>
+                        <th>Удалить</th>
+                    </tr>
+                    </thead>
+                    <tbody id="ordersTableBody">
+                    <!-- Данные будут загружены через JavaScript -->
+                    <tr>
+                        <td colspan="10" style="text-align: center;">Загрузка заказов...</td>
+                    </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
-    </footer>
+    </section>
+</main>
+
+<footer>
+    <div class="container footer-container">
+        <div class="footer-info">
+            <p>Типография © 2025</p>
+            <p>Качество печати гарантируем</p>
+        </div>
+        <div class="footer-links">
+            <p>Телефон: +7 (495) 123-45-67</p>
+            <p>Email: info@profprint.ru</p>
+        </div>
+    </div>
+</footer>
 
 </body>
 </html>

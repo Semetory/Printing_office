@@ -1,22 +1,13 @@
-// script.js - исправленная версия
+// script.js
 
+// 1. Цены объявляем в глобальной видимости сразу
 const prices = {
     format: {
-        A0: 80,
-        A1: 60,
-        A2: 40,
-        A3: 20,
-        A4: 10,
-        A5: 8,
-        A6: 5
+        A0: 80, A1: 60, A2: 40, A3: 20, A4: 10, A5: 8, A6: 5
     },
     paper: {
-        "Мелованная": 1,
-        "Матовая": 1.2,
-        "Глянцевая": 1.5,
-        "Картон": 2,
-        "Дизайнерская": 2.5,
-        "Самоклеящаяся": 1.8
+        "Мелованная": 1, "Матовая": 1.2, "Глянцевая": 1.5,
+        "Картон": 2, "Дизайнерская": 2.5, "Самоклеящаяся": 1.8
     },
     lamination: 15,
     urgentMultiplier: 1.5,
@@ -25,22 +16,28 @@ const prices = {
     gluing: 10
 };
 
-// Получаем элементы с проверкой на существование
-const formatSelect = document.getElementById("format");
-const paperSelect = document.getElementById("paper");
-const quantityInput = document.getElementById("quantity");
-const laminationCheckbox = document.getElementById("lamination");
-const urgentCheckbox = document.getElementById("urgent");
-const totalPriceElement = document.getElementById("totalPrice");
-const foldingCheckbox = document.getElementById("folding");
-const creasingCheckbox = document.getElementById("creasing");
-const gluingCheckbox = document.getElementById("gluing");
+// Переменные для элементов формы (объявляем тут, значения присвоим при загрузке)
+let formatSelect, paperSelect, quantityInput, laminationCheckbox;
+let urgentCheckbox, totalPriceElement, foldingCheckbox, creasingCheckbox, gluingCheckbox;
 
-// Функция расчёта цены
+// 2. Функция расчёта цены (доступна везде)
 function calculatePrice() {
-    // Проверяем, что все необходимые элементы существуют
+    // Если DOM еще не загрузился, пытаемся найти элементы повторно
+    if (!formatSelect) {
+        formatSelect = document.getElementById("format");
+        paperSelect = document.getElementById("paper");
+        quantityInput = document.getElementById("quantity");
+        totalPriceElement = document.getElementById("totalPrice");
+        laminationCheckbox = document.getElementById("lamination");
+        urgentCheckbox = document.getElementById("urgent");
+        foldingCheckbox = document.getElementById("folding");
+        creasingCheckbox = document.getElementById("creasing");
+        gluingCheckbox = document.getElementById("gluing");
+    }
+
+    // Проверяем существование критически важных полей
     if (!formatSelect || !paperSelect || !quantityInput || !totalPriceElement) {
-        console.warn('Не все элементы формы найдены для расчёта цены');
+        console.warn('Калькулятор: Критические элементы формы еще не найдены в DOM');
         return 0;
     }
 
@@ -69,7 +66,7 @@ function calculatePrice() {
     return total;
 }
 
-// Функция загрузки цены из localStorage
+// 3. Функция загрузки цены из localStorage
 function loadPricePerSheet() {
     const savedPrice = localStorage.getItem("pricePerSheet");
     if (savedPrice && !isNaN(parseFloat(savedPrice))) {
@@ -81,23 +78,38 @@ function loadPricePerSheet() {
         prices.format.A3 = Math.round(20 * ratio);
         prices.format.A5 = Math.round(8 * ratio);
         prices.format.A6 = Math.round(5 * ratio);
-        calculatePrice();
     }
 }
 
-// Добавляем обработчики ТОЛЬКО если элементы существуют
-if (quantityInput) quantityInput.addEventListener("input", calculatePrice);
-if (laminationCheckbox) laminationCheckbox.addEventListener("change", calculatePrice);
-if (urgentCheckbox) urgentCheckbox.addEventListener("change", calculatePrice);
-if (paperSelect) paperSelect.addEventListener("change", calculatePrice);
-if (formatSelect) formatSelect.addEventListener("change", calculatePrice);
-if (foldingCheckbox) foldingCheckbox.addEventListener("change", calculatePrice);
-if (creasingCheckbox) creasingCheckbox.addEventListener("change", calculatePrice);
-if (gluingCheckbox) gluingCheckbox.addEventListener("change", calculatePrice);
+// 4. Ждем полной загрузки HTML страницы, чтобы привязать события
+document.addEventListener("DOMContentLoaded", function() {
+    // Находим элементы на странице
+    formatSelect = document.getElementById("format");
+    paperSelect = document.getElementById("paper");
+    quantityInput = document.getElementById("quantity");
+    totalPriceElement = document.getElementById("totalPrice");
+    laminationCheckbox = document.getElementById("lamination");
+    urgentCheckbox = document.getElementById("urgent");
+    foldingCheckbox = document.getElementById("folding");
+    creasingCheckbox = document.getElementById("creasing");
+    gluingCheckbox = document.getElementById("gluing");
 
-// Загружаем цену и рассчитываем
-loadPricePerSheet();
-calculatePrice();
+    // Добавляем обработчики событий
+    if (quantityInput) quantityInput.addEventListener("input", calculatePrice);
+    if (laminationCheckbox) laminationCheckbox.addEventListener("change", calculatePrice);
+    if (urgentCheckbox) urgentCheckbox.addEventListener("change", calculatePrice);
+    if (foldingCheckbox) foldingCheckbox.addEventListener("change", calculatePrice);
+    if (creasingCheckbox) creasingCheckbox.addEventListener("change", calculatePrice);
+    if (gluingCheckbox) gluingCheckbox.addEventListener("change", calculatePrice);
 
-// Экспортируем функцию для использования в других файлах
+    // Слушаем изменения на скрытых или текстовых полях
+    if (paperSelect) paperSelect.addEventListener("change", calculatePrice);
+    if (formatSelect) formatSelect.addEventListener("change", calculatePrice);
+
+    // Загружаем цены бэкапа и делаем первичный расчет
+    loadPricePerSheet();
+    calculatePrice();
+});
+
+// Экспортируем функцию в объект window для order.js
 window.calculatePrice = calculatePrice;
