@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель Системного Администратора</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .sys-box {
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-top: 30px;
+        }
+        .btn-panel {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        .btn-danger {
+            background-color: #e74c3c;
+        }
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+        .btn-success {
+            background-color: #2ecc71;
+        }
+        .btn-success:hover {
+            background-color: #27ae60;
+        }
+        .status-log {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-left: 4px solid #3498db;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="container header-container">
+        <a href="index.html" class="logo">Типография</a>
+        <button onclick="logout()" class="submit-btn" style="background:#7f8c8d; padding: 5px 15px;">Выйти</button>
+    </div>
+</header>
+
+<main class="container">
+    <h1 class="page-title">Управление базой данных</h1>
+
+    <div class="sys-box">
+        <h3>Доступные инструменты администратора</h3>
+        <p>Используйте панель для создания резервных копий и обслуживания СУБД проекта.</p>
+
+        <div class="btn-panel">
+            <button id="btnDownload" class="submit-btn btn-success">Скачать БД (.sql)</button>
+
+            <div style="display: inline-block;">
+                <input type="file" id="dbFileInput" accept=".sql" style="display: none;">
+                <button id="btnUploadTrigger" class="submit-btn">Загрузить БД из файла</button>
+            </div>
+
+            <button id="btnClear" class="submit-btn btn-danger">Очистить БД</button>
+        </div>
+
+        <div id="logBox" class="status-log">Система готова к работе.</div>
+    </div>
+</main>
+
+<script src="/js/sysadmin.js"></script>
+</body>
+</html>

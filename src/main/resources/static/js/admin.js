@@ -1,5 +1,11 @@
 // admin.js - работа с API вместо localStorage
 
+// Защита страницы: Проверяем роль перед показом содержимого
+if (localStorage.getItem('userRole') !== 'ADMIN') {
+    alert('Доступ запрещен!');
+    window.location.href = '/login.html';
+}
+
 async function renderOrders() {
     try {
         const orders = await getAllOrders();

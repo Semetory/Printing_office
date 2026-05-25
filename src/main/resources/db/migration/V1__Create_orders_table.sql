@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS orders (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     order_number VARCHAR(255) NOT NULL UNIQUE,
     fullname VARCHAR(255) NOT NULL,
     phone VARCHAR(50) NOT NULL,
@@ -11,10 +11,10 @@ CREATE TABLE IF NOT EXISTS orders (
     total INT NOT NULL,
     status VARCHAR(50) DEFAULT 'Принят',
     created_at TIMESTAMP NOT NULL
-);
+    );
 
 CREATE TABLE IF NOT EXISTS order_files (
     order_id BIGINT NOT NULL,
     filename VARCHAR(255) NOT NULL,
-    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
-);
+    CONSTRAINT fk_order_files_orders FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+    );
