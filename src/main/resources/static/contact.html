@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Типография - Контакты</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <div class="container header-container">
+            <a href="index.html" class="logo">Типография</a>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Главная</a></li>
+                    <li><a href="catalog.html">Каталог</a></li>
+                    <li><a href="characteristics.html">Контроль качества</a></li>
+                    <li><a href="payment.html">Оплата и доставка</a></li>
+					<li><a href="status.html">Статус заказа</a></li>
+                    <li><a href="contact.html" class="active">Контакты</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <h1 class="page-title">Контакты</h1>
+        
+        <section class="contacts-intro">
+            <p>Мы всегда рады помочь вам с выбором полиграфической продукции и ответить на все вопросы. Свяжитесь с нами любым удобным способом.</p>
+        </section>
+        
+        <section class="contact-content">
+            <div class="contact-info">
+                <h3>Наши контакты</h3>
+                
+                <div class="contact-details">
+                    <div class="contact-item">
+                        <strong>Адрес:</strong>
+                        <span>г. Воронеж, ул. Проспект Революции, д. 15 стр. ∞</span>
+                    </div>
+                    
+                    <div class="contact-item">
+                        <strong>Телефон:</strong>
+                        <span>+7 (495) 123-45-67</span>
+                    </div>
+                    
+                    <div class="contact-item">
+                        <strong>Email:</strong>
+                        <span>info@profprint.ru</span>
+                    </div>
+                    
+                    <div class="contact-item">
+                        <strong>Режим работы: </strong>
+                        <span><br>Пн-Пт: 9:00-19:00<br>Сб: 10:00-16:00<br>Вс: выходной</span>
+                    </div>
+                </div>
+                
+                <div class="contact-form">
+                    <h3>Обратная связь</h3>
+                    <p>Если у вас есть вопросы, вы можете связаться с нами по телефону.</p>
+                    <p>Мы ответим вам.</p>
+                </div>
+            </div>
+            
+            <div class="contact-info">
+                <h3>Как нас найти</h3>
+					<div id="map" class="map-placeholder"></div>
+					<script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU"></script>
+						<script>
+
+						ymaps.ready(init);
+						function init() {
+							const map = new ymaps.Map("map", {
+								center: [51.6720, 39.1843],
+								zoom: 12
+							});
+
+							const placemark = new ymaps.Placemark(
+								[51.6720, 39.1843],
+								{
+									balloonContent: "Типография — Воронеж"
+								}
+							);
+							map.geoObjects.add(placemark);
+						}
+
+						</script>
+                <div class="directions">
+                    <h4>Схема проезда:</h4>
+                    <p>От метро "Площадь Ленина": автобусы 70, 88, 50 до остановки "Проспект Революции".</p>
+                    <p>От метро "Кировская": монорельс 22 до остановки "Проспект Революции".</p>
+                    <p>Для автомобилей: имеется подземная парковка на территории.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container footer-container">
+            <div class="footer-info">
+                <p>Типография © 2025</p>
+                <p>Качество печати гарантирует</p>
+            </div>
+            <div class="footer-links">
+                <p>Телефон: +7 (495) 123-45-67</p>
+                <p>Email: info@profprint.ru</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

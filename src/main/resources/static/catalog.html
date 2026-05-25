@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Типография - Каталог форматов бумаги</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<script>
+	function openOrderForm(format) {
+		window.location.href = `order.html?format=${format}`;
+	}
+</script>
+<body>
+    <header>
+        <div class="container header-container">
+            <a href="index.html" class="logo">Типография</a>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Главная</a></li>
+                    <li><a href="catalog.html" class="active">Каталог</a></li>
+                    <li><a href="characteristics.html">Контроль качества</a></li>
+                    <li><a href="payment.html">Оплата и доставка</a></li>
+					<li><a href="status.html">Статус заказа</a></li>
+                    <li><a href="contact.html">Контакты</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <h1 class="page-title">Каталог форматов бумаги</h1>
+        
+        <section class="catalog-intro">
+            <p>В нашей типографии мы работаем с бумагой самых различных в том числе и стандартных и не стандартных форматов. </p>
+        </section>
+        
+        <section class="paper-formats">
+            <div class="format-card" onclick="openOrderForm('A0')">
+					<div class="format-image">
+						<img src="assets/A0.webp" alt="A0">
+					</div>
+                <div class="format-info">
+                    <h3>Формат А0</h3>
+                    <p>Стандартный формат для плакатов, баннеров, технических чертежей.</p>
+                </div>
+            </div>
+            
+            <div class="format-card" onclick="openOrderForm('A1')">
+					<div class="format-image">
+						<img src="assets/A1.webp" alt="A1">
+					</div>
+                <div class="format-info">
+                    <h3>Формат А1</h3>
+                    <p>Крупный формат для презентационных плакатов, карт, схем и рекламных материалов.</p>
+                </div>
+            </div>
+            
+            <div class="format-card" onclick="openOrderForm('A2')">
+					<div class="format-image">
+						<img src="assets/A2.webp" alt="A2">
+					</div>
+                <div class="format-info">
+                    <h3>Формат А2</h3>
+                    <p>Подходит для постеров, настенных календарей, рекламных объявлений.</p>
+                </div>
+            </div>
+            
+            <div class="format-card" onclick="openOrderForm('A3')">
+					<div class="format-image">
+						<img src="assets/A3.webp" alt="A3">
+					</div>
+                <div class="format-info">
+                    <h3>Формат А3</h3>
+                    <p>Популярный формат для брошюр, небольших плакатов, презентаций и календарей.</p>
+                </div>
+            </div>
+            
+            <div class="format-card" onclick="openOrderForm('A4')">
+                <div class="format-image">
+                    <img src="assets/A4.webp" alt="A4">
+                </div>
+                <div class="format-info">
+                    <h3>Формат А4</h3>
+                    <p>Стандартный формат для документов, буклетов, листовок, визиток и бланков.</p>
+                </div>
+            </div>
+            
+            <div class="format-card" onclick="openOrderForm('A5')">
+                <div class="format-image">
+                    <img src="assets/A5.webp" alt="A5">
+                </div>
+                <div class="format-info">
+                    <h3>Формат А5</h3>
+                    <p>Компактный формат для блокнотов, пригласительных, небольших брошюр и открыток.</p>
+                </div>
+            </div>
+            
+            <div class="format-card" onclick="openOrderForm('A6')">
+                <div class="format-image">
+                    <img src="assets/A6.webp" alt="A6">
+                </div>
+                <div class="format-info">
+                    <h3>Формат А6</h3>
+                    <p>Миниатюрный формат для открыток, приглашений, карманных календарей и флаеров.</p>
+                </div>
+            </div>
+            
+        </section>
+    </main>
+
+    <footer>
+        <div class="container footer-container">
+            <div class="footer-info">
+                <p>Типография © 2025</p>
+                <p>Качество печати гарантируем</p>
+            </div>
+            <div class="footer-links">
+                <p>Телефон: +7 (495) 123-45-67</p>
+                <p>Email: info@profprint.ru</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

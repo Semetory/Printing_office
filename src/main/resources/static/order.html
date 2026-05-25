@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Оформление заказа</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/api.js"></script>
+    <script src="/js/validation.js"></script>
+    <script src="/js/order.js"></script>
+    <script src="/js/script.js"></script>
+</head>
+<body>
+
+<header>
+    <div class="container header-container">
+        <a href="index.html" class="logo">Типография</a>
+        <nav>
+            <ul>
+                <li><a href="index.html">Главная</a></li>
+                <li><a href="catalog.html">Каталог</a></li>
+                <li><a href="characteristics.html">Контроль качества</a></li>
+                <li><a href="payment.html">Оплата и доставка</a></li>
+                <li><a href="status.html">Статус заказа</a></li>
+                <li><a href="contact.html">Контакты</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+<main class="container">
+    <h1 class="page-title">Форма расчёта стоимости</h1>
+
+    <form id="orderForm" class="order-form">
+        <!-- Поле ФОРМАТ - обязательно должно быть! -->
+        <div class="form-group">
+            <label>Формат</label>
+            <input type="text" id="format" readonly value="A4">
+        </div>
+
+        <div class="form-group">
+            <label>Тип бумаги</label>
+            <div class="custom-dropdown" id="paperDropdown">
+                <button type="button" class="dropdown-toggle" id="paperToggle">
+                    <span id="paperSelected">Мелованная</span>
+                    <span class="dropdown-arrow">▼</span>
+                </button>
+                <div class="dropdown-menu" id="paperMenu">
+                    <div class="dropdown-item active" data-value="Мелованная">Мелованная</div>
+                    <div class="dropdown-item" data-value="Матовая">Матовая</div>
+                    <div class="dropdown-item" data-value="Глянцевая">Глянцевая</div>
+                    <div class="dropdown-item" data-value="Картон">Картон</div>
+                    <div class="dropdown-item" data-value="Дизайнерская">Дизайнерская</div>
+                    <div class="dropdown-item" data-value="Самоклеящаяся">Самоклеящаяся</div>
+                </div>
+                <input type="hidden" id="paper" value="Мелованная">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Тираж</label>
+            <input type="number" id="quantity" min="1" value="1" required>
+            <small>От 1 до 10 000 экземпляров</small>
+        </div>
+
+        <div class="form-group">
+            <label>Дополнительные услуги</label>
+            <div class="checkbox-group">
+                <label><input type="checkbox" id="lamination" value="Ламинация"> Ламинация</label>
+                <label><input type="checkbox" id="folding" value="Фальцовка"> Фальцовка</label>
+                <label><input type="checkbox" id="creasing" value="Биговка"> Биговка</label>
+                <label><input type="checkbox" id="gluing" value="Склейка"> Склейка</label>
+                <label><input type="checkbox" id="urgent"> Срочный заказ</label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Загрузка макета</label>
+            <div class="upload-area" id="uploadArea">
+                <span>Перетащите файл сюда или нажмите</span>
+                <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.tiff" hidden multiple>
+            </div>
+            <div id="fileList"></div>
+        </div>
+
+        <div class="form-group">
+            <label>Имя</label>
+            <input type="text" id="fullname" required>
+            <small>Только буквы, пробелы и дефис (2-50 символов)</small>
+        </div>
+
+        <div class="form-group">
+            <label>Телефон</label>
+            <div class="phone-wrapper">
+                <select id="countryCode">
+                    <option value="+7">🇷🇺 +7</option>
+                    <option value="+375">🇧🇾 +375</option>
+                    <option value="+994">🇦🇿 +994</option>
+                    <option value="+998">🇺🇿 +998</option>
+                    <option value="+992">🇹🇯 +992</option>
+                    <option value="+996">🇰🇬 +996</option>
+                </select>
+                <input type="text" id="phone" placeholder="912-345-67-89" maxlength="14">
+            </div>
+            <small>Введите 10 цифр номера</small>
+        </div>
+
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="email" required>
+            <small>Формат: name@domain.ru</small>
+        </div>
+
+        <div class="form-group">
+            <label>Стоимость заказа</label>
+            <input type="text" id="totalPrice" readonly value="0 ₽">
+        </div>
+
+        <div class="form-group">
+            <label>Способ оплаты</label>
+            <div class="slider-select" id="paymentSlider">
+                <div class="slider-highlight"></div>
+                <button type="button" class="slider-option active" data-value="Онлайн">Онлайн</button>
+                <button type="button" class="slider-option" data-value="Счёт">Счёт</button>
+            </div>
+            <input type="hidden" id="payment" value="Онлайн">
+        </div>
+
+        <div class="form-group">
+            <label>Номер заказа</label>
+            <input type="text" id="orderNumber" readonly>
+        </div>
+
+        <button type="submit" class="submit-btn">Оформить заказ</button>
+    </form>
+</main>
+
+<footer>
+    <div class="container footer-container">
+        <div class="footer-info">
+            <p>Типография © 2025</p>
+            <p>Качество печати гарантируем</p>
+        </div>
+        <div class="footer-links">
+            <p>Телефон: +7 (495) 123-45-67</p>
+            <p>Email: info@profprint.ru</p>
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>

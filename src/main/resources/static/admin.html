@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Админ панель</title>
+		<link rel="stylesheet" href="/css/style.css">
+        <script src="/js/api.js"></script>
+        <script src="/js/admin.js"></script>
+	</head>
+<body>
+
+    <header>
+        <div class="container header-container">
+            <a href="index.html" class="logo">Типография</a>
+            <nav>
+                <ul>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+<main class="container">
+
+    <h1 class="page-title">Форма расчёта стоимости</h1>
+
+	<section class="admin-panel">
+
+		<h2>Админ-панель</h2>
+		<div class="price-block">
+			<h3>Обновление прайса</h3>
+			<label>Цена за 1 лист:</label>
+			<input type="number" id="pricePerSheet" placeholder="Введите цену">
+			<button id="savePriceBtn">Сохранить цену</button>
+		</div>
+
+		<div class="orders-block">
+			<h3>Все заказы</h3>
+            <table>
+                <thead>
+                <tr>
+                    <th>№ заказа</th>
+                    <th>Клиент</th>
+                    <th>Телефон</th>
+                    <th>Формат</th>
+                    <th>Бумага</th>
+                    <th>Кол-во</th>
+                    <th>Стоимость</th>
+                    <th>Статус</th>
+                    <th>Изменить</th>
+                    <th>Удалить</th>
+                </tr>
+                </thead>
+                <tbody id="ordersTableBody"></tbody>
+            </table>
+		</div>
+	</section>
+
+</main>
+
+    <footer>
+        <div class="container footer-container">
+            <div class="footer-info">
+                <p>Типография © 2025</p>
+                <p>Качество печати гарантируем</p>
+            </div>
+            <div class="footer-links">
+                <p>Телефон: +7 (495) 123-45-67</p>
+                <p>Email: info@profprint.ru</p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

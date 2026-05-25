@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ru">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Статус заказа</title>
+		<link rel="stylesheet" href="css/style.css">
+	</head>
+<body>
+
+<header>
+    <div class="container header-container">
+        <a href="index.html" class="logo">Типография</a>
+        <nav>
+            <ul>
+                <li><a href="index.html">Главная</a></li>
+                <li><a href="catalog.html">Каталог</a></li>
+                <li><a href="characteristics.html">Контроль качества</a></li>
+                <li><a href="payment.html">Оплата и доставка</a></li>
+				<li><a href="status.html" class="active">Статус заказа</a></li>
+                <li><a href="contact.html">Контакты</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+	<main class="container">
+		<h2 class="page-title">Проверка статуса заказа</h2>
+		<section class="status-box">
+			<div class="form-group">
+				<label for="statusInput">Введите номер заказа</label>
+				<input type="text" id="statusInput">
+			</div>
+			<button id="checkStatusBtn" class="submit-btn">Проверить</button>
+			<div id="statusResult"></div>
+		</section>
+	</main>
+
+    <footer>
+        <div class="container footer-container">
+            <div class="footer-info">
+                <p>Типография © 2025</p>
+                <p>Качество печати гарантируем</p>
+            </div>
+            <div class="footer-links">
+                <p>Телефон: +7 (495) 123-45-67</p>
+                <p>Email: info@profprint.ru</p>
+            </div>
+        </div>
+    </footer>
+	<script src="js/status.js"></script>
+</body>
+</html>
