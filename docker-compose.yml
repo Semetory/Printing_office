@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  # Сервис базы данных
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: printing-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - printing-network
+
+  # Сервис Spring Boot приложения
+  spring-app:
+    build: .
+    container_name: printing-backend
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      # Подменяем localhost на имя контейнера БД внутри сети Docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/${DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      LOGADMIN: ${LOGADMIN}
+      PASSADMIN: ${PASSADMIN}
+      LOGSYSADMIN: ${LOGSYSADMIN}
+      PASSSYSADMIN: ${PASSSYSADMIN}
+    depends_on:
+      - postgres-db
+    networks:
+      - printing-network
+
+volumes:
+  pgdata:
+
+networks:
+  printing-network:
+    driver: bridge
