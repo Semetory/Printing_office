@@ -18,12 +18,12 @@ function initPaperDropdown() {
 
     items?.forEach(item => {
         item.addEventListener("click", function () {
-            const value = this.dataset.value;
+            const value = this.dataset.value;  // Русский текст (для интерфейса)
+            const key = this.dataset.key;      // Латинский ключ (для бэкенда)
 
             if (selectedText) selectedText.textContent = value;
             if (hiddenInput) {
-                hiddenInput.value = value;
-                // Триггерим событие change вручную для script.js
+                hiddenInput.value = key; // Записываем латинский ключ ("glossy", "matte" и т.д.)
                 hiddenInput.dispatchEvent(new Event('change'));
             }
 
@@ -181,10 +181,32 @@ document.addEventListener("DOMContentLoaded", function() {
 
             const fullname = document.getElementById("fullname")?.value.trim() || "";
             const email = document.getElementById("email")?.value.trim() || "";
-            const format = document.getElementById("format")?.value || "A4";
-            const paper = document.getElementById("paper")?.value || "Мелованная";
+
+            const formatInput = document.getElementById("format");
+            const paperInput = document.getElementById("paper");
+
+            const format = formatInput ? formatInput.value.trim() : "A4";
+            const paper = paperInput ? paperInput.value.trim() : "coated";
             const payment = document.getElementById("payment")?.value || "Онлайн";
             const total = window.calculatePrice ? window.calculatePrice() : 0;
+
+            const selectedServices = [];
+            // Ищем ВСЕ отмеченные чекбоксы, у которых есть атрибут data-key, по всей форме заказа
+            const checkboxes = document.querySelectorAll('#orderForm input[type="checkbox"]:checked');
+            checkboxes.forEach(cb => {
+                if (cb.dataset.key) {
+                    selectedServices.push(cb.dataset.key); // Теперь гарантированно соберет и lamination, и gluing
+                }
+            });
+
+            // Вычисляем чистую стоимость для отправки на сервер без текстовых символов "₽"
+            let finalTotal = 0;
+            const totalElement = document.getElementById('totalPrice');
+            if (totalElement) {
+                // Если это input — берем value, если обычный тег — берем textContent или innerText
+                const totalString = totalElement.value !== undefined ? totalElement.value : totalElement.textContent;
+                finalTotal = parseInt(totalString.replace(/\D/g, '')) || 0;
+            }
 
             const order = {
                 fullname: fullname,
@@ -192,12 +214,12 @@ document.addEventListener("DOMContentLoaded", function() {
                 email: email,
                 format: format,
                 paper: paper,
-                quantity: quantityResult.value,
+                quantity: parseInt(document.getElementById("quantity").value) || 1,
                 payment: payment,
-                total: total,
+                //total: finalTotal, // Отправляем серверу чистое числовое значение
                 files: [...uploadedFiles],
-                status: "Принят",
-                createdAt: new Date().toLocaleString()
+                services: selectedServices,
+                status: "Принят"
             };
 
             if (typeof sendOrderToServer === 'undefined') {
@@ -207,7 +229,12 @@ document.addEventListener("DOMContentLoaded", function() {
             }
 
             try {
-                const savedOrder = await sendOrderToServer(order);
+                // Находим наш скрытый инпут, куда браузер сохраняет бинарники файлов
+                const fileInputEl = document.getElementById("fileInput");
+                const physicalFile = fileInputEl && fileInputEl.files.length > 0 ? fileInputEl.files[0] : null;
+
+                // Передаем объект заказа И сам файл в обновленную функцию из api.js
+                const savedOrder = await sendOrderToServer(order, physicalFile);
                 showOrderNumberModal(savedOrder.orderNumber);
             } catch (error) {
                 alert('Ошибка при создании заказа: ' + error.message);
@@ -220,6 +247,13 @@ document.addEventListener("DOMContentLoaded", function() {
 function handleFiles(files, fileListElement) {
     if (fileListElement) fileListElement.innerHTML = "";
     uploadedFiles = [];
+
+    // Если файлы были перетащены мышкой (Drag & Drop), принудительно синхронизируем их с инпутом
+    const fileInputEl = document.getElementById("fileInput");
+    if (fileInputEl && fileInputEl.files !== files) {
+        fileInputEl.files = files;
+    }
+
     Array.from(files).forEach(file => {
         let error = "";
         if (!allowedTypes.includes(file.type)) {
@@ -242,71 +276,63 @@ function handleFiles(files, fileListElement) {
 }
 
 // Модальное окно
+// Модальное окно и кастомный Toast-нотификатор
 function showOrderNumberModal(orderNumber) {
-    const modal = document.createElement('div');
-    modal.style.cssText = `
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.5); display: flex; align-items: center;
-        justify-content: center; z-index: 10000;
-    `;
+    // 1. Находим элементы, которые уже добавлены внизу страницы order.html
+    const modal = document.getElementById('successModal');
+    const modalOrderNumber = document.getElementById('modalOrderNumber');
+    const btnCopyNumber = document.getElementById('btnCopyNumber');
+    const btnCloseModal = document.getElementById('btnCloseModal');
 
-    const modalContent = document.createElement('div');
-    modalContent.style.cssText = `
-        background: white; padding: 30px; border-radius: 16px;
-        text-align: center; max-width: 400px; box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-    `;
+    if (!modal || !modalOrderNumber) {
+        // Резервный вариант на случай, если HTML не обновился
+        alert('Заказ создан! Номер: ' + orderNumber);
+        return;
+    }
 
-    modalContent.innerHTML = `
-        <h2 style="color: #2c3e50; margin-bottom: 20px;">✅ Заказ создан!</h2>
-        <p style="font-size: 18px; margin-bottom: 10px;">Ваш номер заказа:</p>
-        <p style="font-size: 32px; font-weight: bold; color: #3498db; margin: 15px 0; letter-spacing: 2px;">${orderNumber}</p>
-        <p style="color: #666; margin-bottom: 20px;">Сохраните его для отслеживания статуса</p>
-        <button id="copyOrderBtn" style="background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-right: 10px;">📋 Копировать</button>
-        <button id="closeModalBtn" style="background: #95a5a6; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">Остаться на странице</button>
-        <button id="goToStatusBtn" style="background: #2ecc71; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-top: 10px;">📊 Проверить статус</button>
-    `;
+    // 2. Подставляем сгенерированный номер заказа и отображаем окно (через flex для центрирования)
+    modalOrderNumber.innerText = orderNumber;
+    modal.style.display = 'flex';
 
-    modal.appendChild(modalContent);
-    document.body.appendChild(modal);
+    // 3. Обработка клика по кнопке «Копировать номер» (Заменяем старый alert на красивый Toast)
+    btnCopyNumber.onclick = function() {
+        navigator.clipboard.writeText(orderNumber).then(() => {
+            const toast = document.getElementById('customToast');
+            if (toast) {
+                toast.style.display = 'block';
+                // Мягко прячем уведомление через 2.5 секунды
+                setTimeout(() => {
+                    toast.style.display = 'none';
+                }, 2500);
+            }
+        }).catch(err => {
+            console.error('Не удалось скопировать номер: ', err);
+        });
+    };
 
-    document.getElementById('copyOrderBtn')?.addEventListener('click', () => {
-        navigator.clipboard.writeText(orderNumber);
-        alert('Номер заказа скопирован!');
-    });
+    // 4. Обработка кнопки «Закрыть» (Очищаем форму и сбрасываем калькулятор)
+    btnCloseModal.onclick = function() {
+        modal.style.display = 'none';
 
-    document.getElementById('closeModalBtn')?.addEventListener('click', () => {
-        modal.remove();
         const form = document.getElementById('orderForm');
         if (form) form.reset();
+
         const totalPrice = document.getElementById('totalPrice');
         if (totalPrice) totalPrice.value = '0 ₽';
+
         uploadedFiles = [];
         const fileList = document.getElementById('fileList');
         if (fileList) fileList.innerHTML = '';
-    });
 
-    document.getElementById('goToStatusBtn')?.addEventListener('click', () => {
-        window.location.href = "status.html";
-    });
+        // Сбрасываем выбранный тип бумаги на дефолтный
+        const selectedText = document.getElementById("paperSelected");
+        const hiddenInput = document.getElementById("paper");
+        if (selectedText) selectedText.textContent = "Мелованная";
+        if (hiddenInput) hiddenInput.value = "coated";
 
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) modal.remove();
-    });
-}
-
-function generateOrderNumber(phone) {
-    const digits = phone.replace(/\D/g, "");
-    const lastFour = digits.slice(-4) || "0000";
-
-    const now = new Date();
-    const timestamp = now.getFullYear().toString().slice(-2) +
-        (now.getMonth() + 1).toString().padStart(2, '0') +
-        now.getDate().toString().padStart(2, '0') +
-        now.getHours().toString().padStart(2, '0') +
-        now.getMinutes().toString().padStart(2, '0') +
-        now.getSeconds().toString().padStart(2, '0');
-
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-
-    return `${lastFour}${timestamp}${random}`;
+        // Пересчитываем цену (вернет к базовой)
+        if (typeof window.calculatePrice === "function") {
+            window.calculatePrice();
+        }
+    };
 }

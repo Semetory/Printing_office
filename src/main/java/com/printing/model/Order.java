@@ -44,6 +44,11 @@ public class Order {
     @Column(name = "filename")
     private List<String> files = new ArrayList<>();
 
+    @ElementCollection
+    @CollectionTable(name = "order_services", joinColumns = @JoinColumn(name = "order_id"))
+    @Column(name = "service_key")
+    private List<String> services;
+
     private String status = "Принят";
 
     @Column(nullable = false)
@@ -93,4 +98,12 @@ public class Order {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public List<String> getServices() {
+        return services;
+    }
+
+    public void setServices(List<String> services) {
+        this.services = services;
+    }
 }

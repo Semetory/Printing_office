@@ -14,6 +14,8 @@ public class OrderRequestDTO {
     private List<String> files;
     private String orderNumber;
 
+    private List<String> services; // Сюда прилетят ["lamination", "folding"]
+
     // Геттеры и сеттеры
     public String getFullname() { return fullname; }
     public void setFullname(String fullname) { this.fullname = fullname; }
@@ -41,4 +43,7 @@ public class OrderRequestDTO {
 
     public List<String> getFiles() { return files; }
     public void setFiles(List<String> files) { this.files = files; }
+
+    public List<String> getServices() { return services; }
+    public void setServices(List<String> services) { this.services = services; }
 }

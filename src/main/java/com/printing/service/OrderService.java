@@ -11,4 +11,8 @@ public interface OrderService {
     List<OrderResponseDTO> getAllOrders();
     Optional<OrderResponseDTO> updateOrderStatus(String orderNumber, String status);
     boolean deleteOrder(String orderNumber);
+
+    // Допиши этот метод в интерфейс OrderService
+    void storeFile(Long orderId, org.springframework.web.multipart.MultipartFile file) throws java.io.IOException;
+    java.util.List<com.printing.model.OrderFileStorage> getFilesByOrderId(Long orderId);
 }

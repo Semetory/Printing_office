@@ -1,28 +1,64 @@
-// script.js
+// // script.js
 
-// 1. Цены объявляем в глобальной видимости сразу
+// 1. Цены по умолчанию (Резервные/Бэкап). Если сервер вернет ошибку, калькулятор будет жить.
 const prices = {
     format: {
-        A0: 80, A1: 60, A2: 40, A3: 20, A4: 10, A5: 8, A6: 5
+        A0: 150, A1: 90, A2: 45, A3: 20, A4: 10, A5: 7, A6: 4
     },
     paper: {
-        "Мелованная": 1, "Матовая": 1.2, "Глянцевая": 1.5,
-        "Картон": 2, "Дизайнерская": 2.5, "Самоклеящаяся": 1.8
+        coated: 4,      // Мелованная
+        matte: 7,       // Матовая
+        glossy: 5,      // Глянцевая
+        cardboard: 15,  // Картон
+        design: 25,     // Дизайнерская
+        sticky: 12      // Самоклеящаяся
     },
     lamination: 15,
-    urgentMultiplier: 1.5,
-    folding: 5,
-    creasing: 7,
-    gluing: 10
+    folding: 3,
+    creasing: 4,
+    gluing: 8,
+    urgent: 200          // ИЗМЕНЕНИЕ: Базовая фикс. цена в бэкапе (например, 200 ₽ вместо 20)
 };
 
-// Переменные для элементов формы (объявляем тут, значения присвоим при загрузке)
+// Переменные для элементов формы
 let formatSelect, paperSelect, quantityInput, laminationCheckbox;
 let urgentCheckbox, totalPriceElement, foldingCheckbox, creasingCheckbox, gluingCheckbox;
 
-// 2. Функция расчёта цены (доступна везде)
+// ФУНКЦИЯ ДЛЯ ЗАГРУЗКИ АКТУАЛЬНЫХ ЦЕН ИЗ БД БЭКЕНДА
+async function fetchPricesFromServer() {
+    try {
+        const response = await fetch('/api/prices');
+        if (!response.ok) throw new Error('Ошибка сети при получении прайс-листа');
+
+        const dbPrices = await response.json(); // Получаем массив объектов PriceConfig
+
+        // Проходим циклом по массиву из БД и обновляем наш глобальный объект prices
+        dbPrices.forEach(item => {
+            const key = item.itemKey; // Например: "A1", "glossy", "urgent"
+            const priceValue = item.price; // Например: 90, 5, 200
+
+            // Распределяем по категориям, проверяя ключи форматов и бумаги
+            if (['A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6'].includes(key)) {
+                prices.format[key] = priceValue;
+            } else if (['coated', 'matte', 'glossy', 'cardboard', 'design', 'sticky'].includes(key)) {
+                prices.paper[key] = priceValue;
+            } else {
+                // Все остальные ключи — это доп. услуги (lamination, urgent, folding...)
+                prices[key] = priceValue;
+            }
+        });
+
+        console.log("Калькулятор: Цены из базы данных успешно синхронизированы!", prices);
+        // Сразу после успешного обновления цен — пересчитываем стоимость на экране
+        calculatePrice();
+
+    } catch (error) {
+        console.warn("Калькулятор: Не удалось загрузить цены с сервера. Используются дефолтные цены.", error);
+    }
+}
+
+// 2. Функция расчёта цены (Вариант Б)
 function calculatePrice() {
-    // Если DOM еще не загрузился, пытаемся найти элементы повторно
     if (!formatSelect) {
         formatSelect = document.getElementById("format");
         paperSelect = document.getElementById("paper");
@@ -35,7 +71,6 @@ function calculatePrice() {
         gluingCheckbox = document.getElementById("gluing");
     }
 
-    // Проверяем существование критически важных полей
     if (!formatSelect || !paperSelect || !quantityInput || !totalPriceElement) {
         console.warn('Калькулятор: Критические элементы формы еще не найдены в DOM');
         return 0;
@@ -51,39 +86,40 @@ function calculatePrice() {
     const creasing = creasingCheckbox?.checked || false;
     const gluing = gluingCheckbox?.checked || false;
 
-    let basePrice = prices.format[format] || 0;
-    basePrice *= prices.paper[paper] || 1;
-    let total = basePrice * quantity;
+    // Базовые цены формата и бумаги
+    let formatPrice = prices.format[format] || 0;
+    let paperPrice = prices.paper[paper] || 0;
 
-    if (lamination) total += prices.lamination * quantity;
-    if (folding) total += prices.folding * quantity;
-    if (creasing) total += prices.creasing * quantity;
-    if (gluing) total += prices.gluing * quantity;
-    if (urgent) total *= prices.urgentMultiplier;
+    // Считаем услуги, которые зависят ОТ ТИРАЖА (за штуку)
+    let servicesPricePerPieceSum = 0;
+    if (lamination) servicesPricePerPieceSum += prices.lamination;
+    if (folding) servicesPricePerPieceSum += prices.folding;
+    if (creasing) servicesPricePerPieceSum += prices.creasing;
+    if (gluing) servicesPricePerPieceSum += prices.gluing;
+
+    // Считаем фиксированные услуги ЗА ВЕСЬ ЗАКАЗ (Вариант Б)
+    let fixedUrgentPrice = 0;
+    if (urgent) {
+        fixedUrgentPrice = prices.urgent; // Просто берем цену, не умножая на тираж
+    }
+
+    // ИТОГОВАЯ ФОРМУЛА ВАРИАНТА Б: (Формат + Бумага + Услуги_за_шт) * Тираж + Фиксированная_Срочность
+    let total = ((formatPrice + paperPrice + servicesPricePerPieceSum) * quantity) + fixedUrgentPrice;
 
     total = Math.round(total);
-    totalPriceElement.value = total + " ₽";
+
+    // Безопасный вывод стоимости в интерфейс
+    if (totalPriceElement.value !== undefined) {
+        totalPriceElement.value = total + " ₽";
+    } else {
+        totalPriceElement.textContent = total + " ₽";
+    }
+
     return total;
 }
 
-// 3. Функция загрузки цены из localStorage
-function loadPricePerSheet() {
-    const savedPrice = localStorage.getItem("pricePerSheet");
-    if (savedPrice && !isNaN(parseFloat(savedPrice))) {
-        prices.format.A4 = parseFloat(savedPrice);
-        const ratio = parseFloat(savedPrice) / 10;
-        prices.format.A0 = Math.round(80 * ratio);
-        prices.format.A1 = Math.round(60 * ratio);
-        prices.format.A2 = Math.round(40 * ratio);
-        prices.format.A3 = Math.round(20 * ratio);
-        prices.format.A5 = Math.round(8 * ratio);
-        prices.format.A6 = Math.round(5 * ratio);
-    }
-}
-
-// 4. Ждем полной загрузки HTML страницы, чтобы привязать события
+// 4. Ждем загрузки HTML страницы
 document.addEventListener("DOMContentLoaded", function() {
-    // Находим элементы на странице
     formatSelect = document.getElementById("format");
     paperSelect = document.getElementById("paper");
     quantityInput = document.getElementById("quantity");
@@ -94,7 +130,6 @@ document.addEventListener("DOMContentLoaded", function() {
     creasingCheckbox = document.getElementById("creasing");
     gluingCheckbox = document.getElementById("gluing");
 
-    // Добавляем обработчики событий
     if (quantityInput) quantityInput.addEventListener("input", calculatePrice);
     if (laminationCheckbox) laminationCheckbox.addEventListener("change", calculatePrice);
     if (urgentCheckbox) urgentCheckbox.addEventListener("change", calculatePrice);
@@ -102,14 +137,11 @@ document.addEventListener("DOMContentLoaded", function() {
     if (creasingCheckbox) creasingCheckbox.addEventListener("change", calculatePrice);
     if (gluingCheckbox) gluingCheckbox.addEventListener("change", calculatePrice);
 
-    // Слушаем изменения на скрытых или текстовых полях
     if (paperSelect) paperSelect.addEventListener("change", calculatePrice);
     if (formatSelect) formatSelect.addEventListener("change", calculatePrice);
 
-    // Загружаем цены бэкапа и делаем первичный расчет
-    loadPricePerSheet();
-    calculatePrice();
+    // Запускаем асинхронное скачивание цен с бэкенда при открытии страницы
+    fetchPricesFromServer();
 });
 
-// Экспортируем функцию в объект window для order.js
 window.calculatePrice = calculatePrice;

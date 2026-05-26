@@ -13,6 +13,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -42,14 +44,57 @@ public class AdminController {
     @Autowired
     private OrderRepository orderRepository;
 
+    @Autowired
+    private com.printing.repository.LoginAttemptRepository loginAttemptRepository;
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequestDTO request) {
-        if (logAdmin.equals(request.getUsername()) && passAdmin.equals(request.getPassword())) {
-            return ResponseEntity.ok(new LoginResponseDTO("ADMIN", "/admin.html"));
-        } else if (logSysAdmin.equals(request.getUsername()) && passSysAdmin.equals(request.getPassword())) {
-            return ResponseEntity.ok(new LoginResponseDTO("SYSADMIN", "/sysadmin.html"));
+        String username = request.getUsername();
+        LocalDateTime now = LocalDateTime.now();
+
+        // 1. Проверяем, существует ли уже запись о попытках для этого пользователя
+        com.printing.model.LoginAttempt attempt = loginAttemptRepository.findById(username)
+                .orElse(new com.printing.model.LoginAttempt(username, 0, null));
+
+        // 2. Проверяем, находится ли пользователь под активной блокировкой
+        if (attempt.getLockTime() != null && attempt.getLockTime().isAfter(now)) {
+            java.time.Duration duration = java.time.Duration.between(now, attempt.getLockTime());
+            long minutesLeft = duration.toMinutes() + 1;
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Лимит попыток исчерпан. Вход заблокирован на " + minutesLeft + " мин.");
         }
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Неверный логин или пароль");
+
+        // Проверка логина и пароля
+        boolean isValidAdmin = logAdmin.equals(username) && passAdmin.equals(request.getPassword());
+        boolean isValidSysAdmin = logSysAdmin.equals(username) && passSysAdmin.equals(request.getPassword());
+
+        if (isValidAdmin || isValidSysAdmin) {
+            // Успешный вход — сбрасываем счетчик ошибок в ноль
+            attempt.setAttempts(0);
+            attempt.setLockTime(null);
+            loginAttemptRepository.save(attempt);
+
+            String role = isValidAdmin ? "ADMIN" : "SYSADMIN";
+            String redirectUrl = isValidAdmin ? "/admin.html" : "/sysadmin.html";
+            return ResponseEntity.ok(new LoginResponseDTO(role, redirectUrl));
+        } else {
+            // Ошибка входа — увеличиваем счетчик
+            int failedAttempts = attempt.getAttempts() + 1;
+            attempt.setAttempts(failedAttempts);
+
+            if (failedAttempts >= 3) {
+                // Ставим блокировку на 10 минут от текущего времени сервера
+                attempt.setLockTime(now.plusMinutes(10));
+                loginAttemptRepository.save(attempt);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("Вы ввели неверные данные 3 раза. Вход заблокирован на 10 минут.");
+            } else {
+                loginAttemptRepository.save(attempt);
+                int remains = 3 - failedAttempts;
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("Введенные данные не верны. Осталось попыток: " + remains);
+            }
+        }
     }
 
     // Находим строчки с @Value в начале класса и добавляем внедрение пароля:
@@ -152,4 +197,31 @@ public class AdminController {
     private String extractDbName(String url) {
         return url.substring(url.lastIndexOf("/") + 1);
     }
+
+    @Autowired
+    private com.printing.repository.PriceConfigRepository priceConfigRepository;
+
+    // Получить все цены
+    @GetMapping("/prices")
+    public ResponseEntity<List<com.printing.model.PriceConfig>> getPrices() {
+        return ResponseEntity.ok(priceConfigRepository.findAll());
+    }
+
+    // Обновить цену конкретной позиции
+    @PutMapping("/prices/{key}")
+    public ResponseEntity<?> updatePrice(@PathVariable String key, @RequestParam Integer newPrice) {
+        // ЗАЩИТА: Цена не может быть меньше нуля
+        if (newPrice == null || newPrice < 0) {
+            return ResponseEntity.badRequest().body("Цена не может быть отрицательной или пустой!");
+        }
+
+        return priceConfigRepository.findById(key)
+                .map(config -> {
+                    config.setPrice(newPrice);
+                    priceConfigRepository.save(config);
+                    return ResponseEntity.ok("Цена успешно обновлена");
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
 }

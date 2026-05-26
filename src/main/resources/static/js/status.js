@@ -21,36 +21,57 @@ document.addEventListener("DOMContentLoaded", () => {
 
         statusResult.innerHTML = `<p style="color: #3498db;">Поиск заказа...</p>`;
 
-        // Проверяем, доступна ли функция из api.js
         if (typeof window.getOrderByNumber !== "function" && typeof getOrderByNumber !== "function") {
             statusResult.innerHTML = `<p style="color: #e74c3c;">Ошибка: API модуль (api.js) не подключен или поврежден.</p>`;
             return;
         }
 
         try {
-            // Вызываем функцию из api.js
             const order = await getOrderByNumber(orderNumber);
 
+            // ИСПРАВЛЕНИЕ: Если заказ действительно НЕ найден в БД
             if (!order) {
-                statusResult.innerHTML = `
-                    <div style="padding: 15px; background: #fdf2f2; border-radius: 8px; border: 1px solid #f8b4b4; margin-top: 15px;">
-                        <p style="color: #e74c3c; font-weight: bold; margin: 0;">Заказ №${orderNumber} не найден</p>
-                        <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Проверьте правильность ввода номера.</p>
-                    </div>
-                `;
+                statusResult.innerHTML = `<p style="color: #e74c3c;">Заказ с номером <strong>${orderNumber}</strong> не найден.</p>`;
                 return;
             }
 
-            // Если заказ найден, выводим красивую карточку со статусом
+            // ЛОГИКА ДЛЯ НАЙДЕННОГО ЗАКАЗА:
+            // Переводим латинские ключи в читаемый вид для клиента
+            const serviceNames = {
+                lamination: "Ламинация",
+                folding: "Фальцовка",
+                creasing: "Биговка",
+                gluing: "Склейка",
+                urgent: "Срочный заказ"
+            };
+
+            const paperNames = {
+                coated: "Мелованная",
+                matte: "Матовая",
+                glossy: "Глянцевая",
+                cardboard: "Картон",
+                design: "Дизайнерская",
+                sticky: "Самоклеящаяся"
+            };
+
+            const displayPaper = paperNames[order.paper] || order.paper;
+
+            // Собираем доп. услуги
+            const displayServices = order.services && order.services.length > 0
+                ? order.services.map(key => serviceNames[key] || key).join(", ")
+                : "Не выбраны";
+
+            // Выводим обновленную, красивую карточку со всеми параметрами заказа
             statusResult.innerHTML = `
                 <div style="padding: 20px; background: #f4f9f4; border-radius: 12px; border: 1px solid #c3e6cb; margin-top: 15px; text-align: left;">
                     <h3 style="color: #2c3e50; margin-top: 0;">Информация о заказе</h3>
                     <p><strong>Номер:</strong> ${orderNumber}</p>
                     <p><strong>Клиент:</strong> ${order.fullname || 'Не указано'}</p>
-                    <p><strong>Услуга:</strong> Печать (${order.format}, бумага: ${order.paper})</p>
+                    <p><strong>Параметры:</strong> Формат ${order.format}, бумага: ${displayPaper}</p>
+                    <p><strong>Доп. услуги:</strong> <span style="color: #2980b9; font-weight: 500;">${displayServices}</span></p>
                     <p><strong>Тираж:</strong> ${order.quantity} шт.</p>
-                    <p><strong>Сумма:</strong> <span style="font-weight: bold; color: #2ecc71;">${order.total} ₽</span></p>
-                    <p><strong>Дата создания:</strong> ${order.createdAt || '—'}</p>
+                    <p><strong>Сумма:</strong> <span style="font-weight: bold; color: #2ecc71; font-size: 18px;">${order.total} ₽</span></p>
+                    <p><strong>Дата создания:</strong> ${order.createdAt ? new Date(order.createdAt).toLocaleString() : '—'}</p>
                     <hr style="border: 0; border-top: 1px solid #c3e6cb; margin: 15px 0;">
                     <p style="font-size: 18px; margin-bottom: 0;">
                         <strong>Статус:</strong> 
@@ -67,10 +88,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Вешаем событие на клик по кнопке
     checkStatusBtn.addEventListener("click", checkOrderStatus);
 
-    // Дополнительно: проверка по нажатию Enter в текстовом поле
     statusInput.addEventListener("keypress", (e) => {
         if (e.key === "Enter") {
             checkOrderStatus();

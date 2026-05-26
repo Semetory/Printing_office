@@ -18,6 +18,8 @@ public class OrderResponseDTO {
     private String status;
     private LocalDateTime createdAt;
 
+    private List<String> services;
+
     // Конструктор
     public OrderResponseDTO() {}
 
@@ -75,4 +77,14 @@ public class OrderResponseDTO {
     public void setFiles(List<String> files) { this.files = files; }
     public void setStatus(String status) { this.status = status; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    // 2. ДОБАВЛЯЕМ СЕТТЕР И ГЕТТЕР, КОТОРЫЕ ИЩЕТ КОМПИЛЯТОР:
+    public List<String> getServices() {
+        return services;
+    }
+
+    public void setServices(List<String> services) {
+        this.services = services;
+    }
+
 }

@@ -18,12 +18,58 @@ import java.util.stream.Collectors;
 public class OrderServiceImpl implements OrderService {
 
     @Autowired
+    private com.printing.repository.PriceConfigRepository priceConfigRepository;
+
+    @Autowired
     private OrderRepository orderRepository;
+
+    @Autowired
+    private com.printing.repository.OrderFileStorageRepository fileStorageRepository;
 
     private final Random random = new Random();
 
+    @jakarta.annotation.PostConstruct
+    public void initPrices() {
+        // Если база пуста, заполняем её первичными тарифами
+        if (priceConfigRepository.count() == 0) {
+            // --- ФОРМАТЫ ---
+            priceConfigRepository.save(new com.printing.model.PriceConfig("A0", "Формат А0 (за шт.)", 150));
+            priceConfigRepository.save(new com.printing.model.PriceConfig("A1", "Формат А1 (за шт.)", 90));
+            priceConfigRepository.save(new com.printing.model.PriceConfig("A2", "Формат А2 (за шт.)", 45));
+            priceConfigRepository.save(new com.printing.model.PriceConfig("A3", "Формат А3 (за шт.)", 20));
+            priceConfigRepository.save(new com.printing.model.PriceConfig("A4", "Формат А4 (за шт.)", 10));
+            priceConfigRepository.save(new com.printing.model.PriceConfig("A5", "Формат А5 (за шт.)", 7));
+            priceConfigRepository.save(new com.printing.model.PriceConfig("A6", "Формат А6 (за шт.)", 4));
+
+            // --- ТИПЫ БУМАГИ ---
+            priceConfigRepository.save(new com.printing.model.PriceConfig("coated", "Мелованная бумага (за шт.)", 4));
+            priceConfigRepository.save(new com.printing.model.PriceConfig("matte", "Матовая бумага (за шт.)", 7));
+            priceConfigRepository.save(new com.printing.model.PriceConfig("glossy", "Глянцевая бумага (за шт.)", 5));
+            priceConfigRepository.save(new com.printing.model.PriceConfig("cardboard", "Картон (за шт.)", 15));
+            priceConfigRepository.save(new com.printing.model.PriceConfig("design", "Дизайнерский картон (за шт.)", 25));
+            priceConfigRepository.save(new com.printing.model.PriceConfig("sticky", "Самоклеящаяся бумага (за шт.)", 12));
+
+            // --- ДОПОЛНИТЕЛЬНЫЕ УСЛУГИ ---
+            priceConfigRepository.save(new com.printing.model.PriceConfig("lamination", "Ламинация (за шт.)", 15));
+            priceConfigRepository.save(new com.printing.model.PriceConfig("folding", "Фальцовка (за шт.)", 3));
+            priceConfigRepository.save(new com.printing.model.PriceConfig("creasing", "Биговка (за шт.)", 4));
+            priceConfigRepository.save(new com.printing.model.PriceConfig("gluing", "Склейка (за шт.)", 8));
+
+            // ИСПРАВЛЕНИЕ: По умолчанию ставим 200 рублей фиксированно за срочность всего тиража
+            priceConfigRepository.save(new com.printing.model.PriceConfig("urgent", "Срочный заказ (фикс. наценка)", 200));
+        }
+    }
+
     @Override
     public OrderResponseDTO createOrder(OrderRequestDTO request) {
+
+        System.out.println("=== НОВЫЙ ЗАКАЗ ===");
+        System.out.println("Формат: " + request.getFormat());
+        System.out.println("Бумага: " + request.getPaper());
+        System.out.println("Тираж: " + request.getQuantity());
+        System.out.println("Выбранные услуги на бэкенде: " + request.getServices());
+        System.out.println("====================");
+
         Order order = new Order();
         order.setOrderNumber(generateOrderNumber(request.getPhone()));
         order.setFullname(request.getFullname());
@@ -33,9 +79,43 @@ public class OrderServiceImpl implements OrderService {
         order.setPaper(request.getPaper());
         order.setQuantity(request.getQuantity());
         order.setPayment(request.getPayment() != null ? request.getPayment() : "Онлайн");
-        order.setTotal(request.getTotal());
         order.setFiles(request.getFiles() != null ? request.getFiles() : List.of());
         order.setStatus("Принят");
+
+        // 1. Базовая цена формата из БД
+        int formatPrice = priceConfigRepository.findByItemKey(request.getFormat().trim())
+                .map(com.printing.model.PriceConfig::getPrice)
+                .orElse(0);
+
+        // 2. Базовая цена бумаги из БД
+        int paperPrice = priceConfigRepository.findByItemKey(request.getPaper().trim())
+                .map(com.printing.model.PriceConfig::getPrice)
+                .orElse(0);
+
+        // 3. Расчет услуг по Варианту Б (Зеркально с JavaScript калькулятором)
+        int servicesPricePerPieceSum = 0;
+        int fixedUrgentPrice = 0;
+
+        if (request.getServices() != null) {
+            for (String serviceKey : request.getServices()) {
+                // Добавили .trim() к ключу услуги
+                int servicePrice = priceConfigRepository.findByItemKey(serviceKey.trim())
+                        .map(com.printing.model.PriceConfig::getPrice)
+                        .orElse(0);
+
+                if ("urgent".equals(serviceKey.trim())) {
+                    fixedUrgentPrice = servicePrice;
+                } else {
+                    servicesPricePerPieceSum += servicePrice;
+                }
+            }
+        }
+
+        // ЗЕРКАЛЬНАЯ ФОРМУЛА: (Цена формата + Цена бумаги + Сумма услуг за шт) * Количество + Срочность
+        int calculatedTotal = ((formatPrice + paperPrice + servicesPricePerPieceSum) * request.getQuantity()) + fixedUrgentPrice;
+
+        order.setTotal(calculatedTotal);
+        order.setServices(request.getServices());
 
         Order saved = orderRepository.save(order);
         return mapToResponse(saved);
@@ -86,20 +166,44 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private OrderResponseDTO mapToResponse(Order order) {
-        return OrderResponseDTO.builder()
-                .id(order.getId())
-                .orderNumber(order.getOrderNumber())
-                .fullname(order.getFullname())
-                .phone(order.getPhone())
-                .email(order.getEmail())
-                .format(order.getFormat())
-                .paper(order.getPaper())
-                .quantity(order.getQuantity())
-                .payment(order.getPayment())
-                .total(order.getTotal())
-                .files(order.getFiles())
-                .status(order.getStatus())
-                .createdAt(order.getCreatedAt())
-                .build();
+        OrderResponseDTO dto = new OrderResponseDTO();
+        dto.setId(order.getId());
+        dto.setOrderNumber(order.getOrderNumber());
+        dto.setFullname(order.getFullname());
+        dto.setPhone(order.getPhone());
+        dto.setEmail(order.getEmail());
+        dto.setFormat(order.getFormat());
+        dto.setPaper(order.getPaper());
+        dto.setQuantity(order.getQuantity());
+        dto.setPayment(order.getPayment());
+        dto.setTotal(order.getTotal());
+        dto.setFiles(order.getFiles());
+        dto.setStatus(order.getStatus());
+        dto.setCreatedAt(order.getCreatedAt());
+        dto.setServices(order.getServices());
+        return dto;
     }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void storeFile(Long orderId, org.springframework.web.multipart.MultipartFile file) throws java.io.IOException {
+        // Проверяем лимит на всякий случай на уровне бизнес-логики (16 МБ = 16777216 Байт)
+        if (file.getSize() > 16777216) {
+            throw new IllegalArgumentException("Размер файла превышает допустимые 16 МБ!");
+        }
+
+        com.printing.model.OrderFileStorage fileStorage = new com.printing.model.OrderFileStorage();
+        fileStorage.setOrderId(orderId);
+        fileStorage.setFileName(org.springframework.util.StringUtils.cleanPath(file.getOriginalFilename()));
+        fileStorage.setFileType(file.getContentType());
+        fileStorage.setData(file.getBytes());
+
+        fileStorageRepository.save(fileStorage);
+    }
+
+    @Override
+    public List<com.printing.model.OrderFileStorage> getFilesByOrderId(Long orderId) {
+        return fileStorageRepository.findByOrderId(orderId);
+    }
+
 }
