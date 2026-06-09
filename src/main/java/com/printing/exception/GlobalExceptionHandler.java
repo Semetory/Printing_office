@@ -1,4 +1,3 @@
-// GlobalExceptionHandler.java
 package com.printing.exception;
 
 import org.springframework.http.HttpStatus;

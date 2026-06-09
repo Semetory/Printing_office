@@ -20,6 +20,8 @@ public class OrderResponseDTO {
 
     private List<String> services;
 
+    private LocalDateTime statusUpdatedAt;
+
     // Конструктор
     public OrderResponseDTO() {}
 
@@ -62,6 +64,7 @@ public class OrderResponseDTO {
     public List<String> getFiles() { return files; }
     public String getStatus() { return status; }
     public LocalDateTime getCreatedAt() { return createdAt; }
+    public LocalDateTime getStatusUpdatedAt() { return statusUpdatedAt; }
 
     // Сеттеры
     public void setId(Long id) { this.id = id; }
@@ -86,5 +89,5 @@ public class OrderResponseDTO {
     public void setServices(List<String> services) {
         this.services = services;
     }
-
+    public void setStatusUpdatedAt(LocalDateTime statusUpdatedAt) { this.statusUpdatedAt = statusUpdatedAt; }
 }

@@ -7,13 +7,16 @@ import jakarta.persistence.*;
 public class PriceConfig {
 
     @Id
-    private String itemKey; // Уникальный ключ, например: "A4", "A3", "GlossyPaper", "MattePaper"
+    // Явно указываем имя колонки с нижним подчёркиванием:
+    @Column(name = "item_key", nullable = false)
+    private String itemKey;
+
+    // Подстраиваемся под реальное имя колонки для названия (слитно)
+    @Column(name = "item_name")
+    private String itemName;
 
     @Column(nullable = false)
-    private String itemName; // Понятное название для админа: "Формат А4", "Глянцевая бумага"
-
-    @Column(nullable = false)
-    private Integer price; // Цена в рублях
+    private Integer price;
 
     public PriceConfig() {}
 

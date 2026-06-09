@@ -242,3 +242,9 @@ async function savePrice(key) {
         alert('Ошибка связи с сервером: ' + err.message);
     }
 }
+
+// Выход из панели
+function logout() {
+    localStorage.removeItem('userRole');
+    window.location.href = '/login.html';
+}

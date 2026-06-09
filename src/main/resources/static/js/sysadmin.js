@@ -11,6 +11,28 @@ function printLog(message, isError = false) {
     logBox.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
 }
 
+// Загрузка логов при старте страницы
+async function loadSystemLogs() {
+    const res = await fetch('/api/admin/system/logs');
+    const logs = await res.json();
+    const container = document.getElementById('logs-container');
+    container.innerHTML = logs.map(log => `
+        <p><strong>[${log.timestamp}]</strong> ${log.action}: ${log.details}</p>
+    `).join('');
+}
+
+async function clearArchive() {
+    if(confirm("Вы уверены, что хотите полностью очистить АРХИВ?")) {
+        const res = await fetch('/api/admin/archive/clear', { method: 'DELETE' });
+        alert(await res.text());
+        loadSystemLogs(); // обновляем панель логов
+    }
+}
+
+// Вызывать при загрузке страницы
+loadSystemLogs();
+
+
 // 1. СКАЧАТЬ БД
 document.getElementById('btnDownload').addEventListener('click', async () => {
     printLog('Подготовка дампа базы данных...');

@@ -67,6 +67,20 @@
             <button id="btnClear" class="submit-btn btn-danger">Очистить БД</button>
         </div>
 
+        <div class="admin-card">
+            <h2>Управление базой данных Архива</h2>
+            <button class="submit-btn btn-success" onclick="downloadArchive()">Скачать дамп БД Архива</button>
+            <input type="file" id="archiveFile" style="display:none" onchange="uploadArchive()">
+            <button class="submit-btn" onclick="document.getElementById('archiveFile').click()">Загрузить дамп БД Архива</button>
+            <button class="submit-btn btn-danger" onclick="clearArchive()">Очистить и пересоздать БД Архива</button>
+        </div>
+
+        <div class="admin-card">
+            <h2>Журнал системных событий (Логи БД)</h2>
+            <div style="max-height: 200px; overflow-y: scroll;" id="logs-container">
+            </div>
+        </div>
+
         <div id="logBox" class="status-log">Система готова к работе.</div>
     </div>
 </main>

@@ -7,6 +7,8 @@ import com.printing.repository.OrderRepository;
 import com.printing.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -30,33 +32,30 @@ public class OrderServiceImpl implements OrderService {
 
     @jakarta.annotation.PostConstruct
     public void initPrices() {
-        // Если база пуста, заполняем её первичными тарифами
         if (priceConfigRepository.count() == 0) {
             // --- ФОРМАТЫ ---
-            priceConfigRepository.save(new com.printing.model.PriceConfig("A0", "Формат А0 (за шт.)", 150));
-            priceConfigRepository.save(new com.printing.model.PriceConfig("A1", "Формат А1 (за шт.)", 90));
-            priceConfigRepository.save(new com.printing.model.PriceConfig("A2", "Формат А2 (за шт.)", 45));
-            priceConfigRepository.save(new com.printing.model.PriceConfig("A3", "Формат А3 (за шт.)", 20));
-            priceConfigRepository.save(new com.printing.model.PriceConfig("A4", "Формат А4 (за шт.)", 10));
-            priceConfigRepository.save(new com.printing.model.PriceConfig("A5", "Формат А5 (за шт.)", 7));
-            priceConfigRepository.save(new com.printing.model.PriceConfig("A6", "Формат А6 (за шт.)", 4));
+            priceConfigRepository.save(new com.printing.model.PriceConfig("A0", "\u0424\u043e\u0440\u043c\u0430\u0442 \u04100 (\u0437\u0430 \u0448\u0442.)", 150)); // Формат А0 (за шт.)
+            priceConfigRepository.save(new com.printing.model.PriceConfig("A1", "\u0424\u043e\u0440\u043c\u0430\u0442 \u04101 (\u0437\u0430 \u0448\u0442.)", 90));  // Формат А1 (за шт.)
+            priceConfigRepository.save(new com.printing.model.PriceConfig("A2", "\u0424\u043e\u0440\u043c\u0430\u0442 \u04102 (\u0437\u0430 \u0448\u0442.)", 45));  // Формат А2 (за шт.)
+            priceConfigRepository.save(new com.printing.model.PriceConfig("A3", "\u0424\u043e\u0440\u043c\u0430\u0442 \u04103 (\u0437\u0430 \u0448\u0442.)", 20));  // Формат А3 (за шт.)
+            priceConfigRepository.save(new com.printing.model.PriceConfig("A4", "\u0424\u043e\u0440\u043c\u0430\u0442 \u04104 (\u0437\u0430 \u0448\u0442.)", 10));  // Формат А4 (за шт.)
+            priceConfigRepository.save(new com.printing.model.PriceConfig("A5", "\u0424\u043e\u0440\u043c\u0430\u0442 \u04105 (\u0437\u0430 \u0448\u0442.)", 7));   // Формат А5 (за шт.)
+            priceConfigRepository.save(new com.printing.model.PriceConfig("A6", "\u0424\u043e\u0440\u043c\u0430\u0442 \u04106 (\u0437\u0430 \u0448\u0442.)", 4));   // Формат А6 (за шт.)
 
             // --- ТИПЫ БУМАГИ ---
-            priceConfigRepository.save(new com.printing.model.PriceConfig("coated", "Мелованная бумага (за шт.)", 4));
-            priceConfigRepository.save(new com.printing.model.PriceConfig("matte", "Матовая бумага (за шт.)", 7));
-            priceConfigRepository.save(new com.printing.model.PriceConfig("glossy", "Глянцевая бумага (за шт.)", 5));
-            priceConfigRepository.save(new com.printing.model.PriceConfig("cardboard", "Картон (за шт.)", 15));
-            priceConfigRepository.save(new com.printing.model.PriceConfig("design", "Дизайнерский картон (за шт.)", 25));
-            priceConfigRepository.save(new com.printing.model.PriceConfig("sticky", "Самоклеящаяся бумага (за шт.)", 12));
+            priceConfigRepository.save(new com.printing.model.PriceConfig("coated", "\u041c\u0435\u043b\u043e\u0432\u0430\u043d\u043d\u0430\u044f \u0431\u0443\u043c\u0430\u0433\u0430 (\u0437\u0430 \u0448\u0442.)", 4)); // Мелованная бумага (за шт.)
+            priceConfigRepository.save(new com.printing.model.PriceConfig("matte", "\u041c\u0430\u0442\u043e\u0432\u0430\u044f \u0431\u0443\u043c\u0430\u0433\u0430 (\u0437\u0430 \u0448\u0442.)", 7));   // Матовая бумага (за шт.)
+            priceConfigRepository.save(new com.printing.model.PriceConfig("glossy", "\u0413\u043b\u044f\u043d\u0446\u0435\u0432\u0430\u044f \u0431\u0443\u043c\u0430\u0433\u0430 (\u0437\u0430 \u0448\u0442.)", 5)); // Глянцевая бумага (за шт.)
+            priceConfigRepository.save(new com.printing.model.PriceConfig("cardboard", "\u041a\u0430\u0440\u0442\u043e\u043d (\u0437\u0430 \u0448\u0442.)", 15)); // Картон (за шт.)
+            priceConfigRepository.save(new com.printing.model.PriceConfig("design", "\u0414\u0438\u0437\u0430\u0439\u043d\u0435\u0440\u0441\u043a\u0438\u0439 \u043a\u0430\u0440\u0442\u043e\u043d (\u0437\u0430 \u0448\u0442.)", 25)); // Дизайнерский картон (за шт.)
+            priceConfigRepository.save(new com.printing.model.PriceConfig("sticky", "\u0421\u0430\u043c\u043e\u043a\u043b\u0435\u044f\u0449\u0430\u044f\u0441\u044f \u0431\u0443\u043c\u0430\u0433\u0430 (\u0437\u0430 \u0448\u0442.)", 12)); // Самоклеящаяся бумага (за шт.)
 
             // --- ДОПОЛНИТЕЛЬНЫЕ УСЛУГИ ---
-            priceConfigRepository.save(new com.printing.model.PriceConfig("lamination", "Ламинация (за шт.)", 15));
-            priceConfigRepository.save(new com.printing.model.PriceConfig("folding", "Фальцовка (за шт.)", 3));
-            priceConfigRepository.save(new com.printing.model.PriceConfig("creasing", "Биговка (за шт.)", 4));
-            priceConfigRepository.save(new com.printing.model.PriceConfig("gluing", "Склейка (за шт.)", 8));
-
-            // ИСПРАВЛЕНИЕ: По умолчанию ставим 200 рублей фиксированно за срочность всего тиража
-            priceConfigRepository.save(new com.printing.model.PriceConfig("urgent", "Срочный заказ (фикс. наценка)", 200));
+            priceConfigRepository.save(new com.printing.model.PriceConfig("lamination", "\u041b\u0430\u043c\u0438\u043d\u0430\u0446\u0438\u044f (\u0437\u0430 \u0448\u0442.)", 15)); // Ламинация (за шт.)
+            priceConfigRepository.save(new com.printing.model.PriceConfig("folding", "\u0424\u0430\u043b\u044c\u0446\u043e\u0432\u043a\u0430 (\u0437\u0430 \u0448\u0442.)", 3));    // Фальцовка (за шт.)
+            priceConfigRepository.save(new com.printing.model.PriceConfig("creasing", "\u0411\u0438\u0433\u043e\u0432\u043a\u0430 (\u0437\u0430 \u0448\u0442.)", 4));     // Биговка (за шт.)
+            priceConfigRepository.save(new com.printing.model.PriceConfig("gluing", "\u0421\u043a\u043b\u0435\u0439\u043a\u0430 (\u0437\u0430 \u0448\u0442.)", 8));       // Склейка (за шт.)
+            priceConfigRepository.save(new com.printing.model.PriceConfig("urgent", "\u0421\u0440\u043e\u0447\u043d\u044b\u0439 \u0437\u0430\u043a\u0430\u0437 (\u0444\u0438\u043a\u0441. \u043d\u0430\u0446\u0435\u043d\u043a\u0430)", 200)); // Срочный заказ (фикс. наценка)
         }
     }
 
@@ -135,11 +134,14 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public Optional<OrderResponseDTO> updateOrderStatus(String orderNumber, String status) {
+    @Transactional
+    public Optional<OrderResponseDTO> updateOrderStatus(String orderNumber, String newStatus) {
         return orderRepository.findByOrderNumber(orderNumber)
                 .map(order -> {
-                    order.setStatus(status);
-                    return mapToResponse(orderRepository.save(order));
+                    order.setStatus(newStatus);
+                    order.setStatusUpdatedAt(LocalDateTime.now()); // <-- ФИКСИРУЕМ ВРЕМЯ ИЗМЕНЕНИЯ
+                    orderRepository.save(order);
+                    return convertToResponseDTO(order);
                 });
     }
 
@@ -205,5 +207,32 @@ public class OrderServiceImpl implements OrderService {
     public List<com.printing.model.OrderFileStorage> getFilesByOrderId(Long orderId) {
         return fileStorageRepository.findByOrderId(orderId);
     }
+
+    private com.printing.dto.OrderResponseDTO convertToResponseDTO(com.printing.model.Order order) {
+        if (order == null) {
+            return null;
+        }
+
+        com.printing.dto.OrderResponseDTO dto = new com.printing.dto.OrderResponseDTO();
+
+        // Заполняем DTO данными из сущности Order
+        dto.setOrderNumber(order.getOrderNumber());
+        dto.setFullname(order.getFullname());
+        dto.setPhone(order.getPhone());
+        dto.setEmail(order.getEmail());
+        dto.setFormat(order.getFormat());
+        dto.setPaper(order.getPaper());
+        dto.setQuantity(order.getQuantity());
+        dto.setPayment(order.getPayment());
+        dto.setTotal(order.getTotal());
+        dto.setStatus(order.getStatus());
+
+        // Новые поля дат (если они у вас добавлены в OrderResponseDTO)
+        dto.setCreatedAt(order.getCreatedAt());
+        dto.setStatusUpdatedAt(order.getStatusUpdatedAt());
+
+        return dto;
+    }
+
 
 }

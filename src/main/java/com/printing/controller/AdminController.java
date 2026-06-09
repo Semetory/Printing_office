@@ -2,6 +2,7 @@ package com.printing.controller;
 
 import com.printing.dto.LoginRequestDTO;
 import com.printing.dto.LoginResponseDTO;
+import com.printing.model.SystemLog;
 import com.printing.repository.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,10 +36,10 @@ public class AdminController {
     private String passSysAdmin;
 
     // Свойства подключения к БД из твоего application.properties
-    @Value("${spring.datasource.username}")
+    @Value("${spring.datasource.primary.username}")
     private String dbUser;
 
-    @Value("${spring.datasource.url}")
+    @Value("${spring.datasource.primary.jdbc-url}")
     private String dbUrl;
 
     @Autowired
@@ -46,6 +47,16 @@ public class AdminController {
 
     @Autowired
     private com.printing.repository.LoginAttemptRepository loginAttemptRepository;
+
+    @Autowired
+    private com.printing.service.OrderService orderService;
+
+    @Autowired
+    private com.printing.repository.archive.ArchiveOrderRepository archiveOrderRepository;
+
+    @Autowired
+    private com.printing.repository.SystemLogRepository logRepository;
+
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequestDTO request) {
@@ -98,7 +109,7 @@ public class AdminController {
     }
 
     // Находим строчки с @Value в начале класса и добавляем внедрение пароля:
-    @Value("${spring.datasource.password}")
+    @Value("${spring.datasource.primary.password}")
     private String dbPassword; // Теперь пароль автоматически подтянется из ваших настроек БД!
 
     // Обновленный метод скачивания
@@ -186,11 +197,36 @@ public class AdminController {
     @DeleteMapping("/database/clear")
     public ResponseEntity<String> clearDatabase() {
         try {
+            // 1. Очищаем основные таблицы заказа
             orderRepository.deleteAll();
-            return ResponseEntity.ok("Все таблицы успешно очищены!");
+            priceConfigRepository.deleteAll();
+            // 2. Вызываем метод пересоздания прайса БЕЗ перезапуска сервера
+            if (orderService instanceof com.printing.service.impl.OrderServiceImpl) {
+                ((com.printing.service.impl.OrderServiceImpl) orderService).initPrices();
+            }
+            // Записываем событие в лог сисадмина (Логику логов см. в Шаге 3)
+            logSystemEvent("Очистка и пересоздание основной БД", "Успешно очищено. Прайс-лист инициализирован заново.");
+            return ResponseEntity.ok("Все таблицы успешно очищены, прайс-лист пересоздан!");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Ошибка очистки: " + e.getMessage());
         }
+    }
+
+    // Очистка и пересоздание архива
+    @DeleteMapping("/archive/clear")
+    public ResponseEntity<String> clearArchive() {
+        try {
+            archiveOrderRepository.deleteAll();
+            logSystemEvent("Очистка архива", "Архивная база данных была полностью очищена сисадмином.");
+            return ResponseEntity.ok("Архив успешно очищен!");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    // Вспомогательный метод добавления в лог
+    private void logSystemEvent(String action, String details) {
+        logRepository.save(new com.printing.model.SystemLog(action, details));
     }
 
     // Вспомогательный метод получения имени БД из jdbc:postgresql://localhost:5432/printing
@@ -205,6 +241,12 @@ public class AdminController {
     @GetMapping("/prices")
     public ResponseEntity<List<com.printing.model.PriceConfig>> getPrices() {
         return ResponseEntity.ok(priceConfigRepository.findAll());
+    }
+
+    // Получение системных логов для панели сисадмина
+    @GetMapping("/system/logs")
+    public ResponseEntity<List<SystemLog>> getSystemLogs() {
+        return ResponseEntity.ok(logRepository.findAll());
     }
 
     // Обновить цену конкретной позиции

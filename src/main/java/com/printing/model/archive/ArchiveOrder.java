@@ -1,70 +1,39 @@
-package com.printing.model;
+package com.printing.model.archive;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
-@Table(name = "orders")
-
-public class Order {
-
-    @Column(name = "status_updated_at")
-    private LocalDateTime statusUpdatedAt;
+@Table(name = "archive_orders")
+public class ArchiveOrder {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "order_number", nullable = false, columnDefinition = "varchar(255) default 'TEMPORARY_NUM'")
+    @Column(name = "order_number", nullable = false)
     private String orderNumber;
 
-    @Column(nullable = false)
     private String fullname;
-
-    @Column(nullable = false)
     private String phone;
-
-    @Column(nullable = false)
     private String email;
-
-    @Column(nullable = false)
     private String format;
-
-    @Column(nullable = false)
     private String paper;
-
-    @Column(nullable = false)
     private Integer quantity;
-
     private String payment;
-
-    @Column(nullable = false)
     private Integer total;
+    private String status;
 
-    @ElementCollection
-    @CollectionTable(name = "order_files", joinColumns = @JoinColumn(name = "order_id"))
-    @Column(name = "filename")
-    private List<String> files = new ArrayList<>();
-
-    @ElementCollection
-    @CollectionTable(name = "order_services", joinColumns = @JoinColumn(name = "order_id"))
-    @Column(name = "service_key")
-    private List<String> services;
-
-    private String status = "Принят";
-
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.statusUpdatedAt = LocalDateTime.now(); // При создании заказа дата статуса совпадает с датой создания
-    }
+    @Column(name = "status_updated_at")
+    private LocalDateTime statusUpdatedAt;
 
-    // Геттеры и сеттеры
+    // Пустой конструктор (обязателен для Hibernate)
+    public ArchiveOrder() {}
+
+    // Геттеры и Сеттеры
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -95,17 +64,11 @@ public class Order {
     public Integer getTotal() { return total; }
     public void setTotal(Integer total) { this.total = total; }
 
-    public List<String> getFiles() { return files; }
-    public void setFiles(List<String> files) { this.files = files; }
-
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-
-    public List<String> getServices() { return services; }
-    public void setServices(List<String> services) { this.services = services; }
 
     public LocalDateTime getStatusUpdatedAt() { return statusUpdatedAt; }
     public void setStatusUpdatedAt(LocalDateTime statusUpdatedAt) { this.statusUpdatedAt = statusUpdatedAt; }
