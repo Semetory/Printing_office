@@ -3,34 +3,68 @@ package com.printing.model.archive;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+/**
+ * JPA-сущность для представления архивного заказа в базе данных.
+ * <p>
+ * Отображается на таблицу {@code archive_orders} в изолированной архивной БД.
+ * Служит для долгосрочного хранения информации о завершенных или отмененных заказах
+ * с целью снижения нагрузки на основную операционную базу данных типографии.
+ * </p>
+ *
+ * @author Дмитрий
+ * @version 1.0
+ */
 @Entity
 @Table(name = "archive_orders")
 public class ArchiveOrder {
 
+    /** Уникальный идентификатор записи (первичный ключ) с автогенерацией. */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** Уникальный рабочий номер архивного заказа. */
     @Column(name = "order_number", nullable = false)
     private String orderNumber;
 
+    /** ФИО заказчика. */
     private String fullname;
+
+    /** Контактный телефон заказчика. */
     private String phone;
+
+    /** Электронная почта для связи. */
     private String email;
+
+    /** Формат полиграфического изделия (например, A3, A4). */
     private String format;
+
+    /** Тип использованной бумаги. */
     private String paper;
+
+    /** Объем тиража (количество экземпляров). */
     private Integer quantity;
+
+    /** Метод или способ проведения оплаты. */
     private String payment;
+
+    /** Финальная стоимость выполненного заказа. */
     private Integer total;
+
+    /** Последний статус заказа перед переносом в архив. */
     private String status;
 
+    /** Дата и время первоначального создания заказа. */
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    /** Дата и время последнего изменения производственного статуса. */
     @Column(name = "status_updated_at")
     private LocalDateTime statusUpdatedAt;
 
-    // Пустой конструктор (обязателен для Hibernate)
+    /**
+     * Конструктор по умолчанию. Обязателен для корректной работы спецификации JPA/Hibernate.
+     */
     public ArchiveOrder() {}
 
     // Геттеры и Сеттеры

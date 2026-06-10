@@ -10,6 +10,16 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Планировщик имитации производственного конвейера типографии.
+ * <p>
+ * Автоматически сдвигает статусы активных заказов по цепочке выполнения
+ * на основании времени, прошедшего с момента создания заказа (Имитация работы цехов).
+ * </p>
+ *
+ * @author Дмитрий
+ * @version 1.0
+ */
 @Service
 public class OrderStatusScheduler {
 
@@ -17,9 +27,15 @@ public class OrderStatusScheduler {
     private OrderRepository orderRepository;
 
     /**
-     * Метод запускается автоматически.
-     * fixedRate = 3600000 означает проверку каждый час (1 час = 3600000 мс).
-     * Можно поставить выполнение раз в сутки (86400000) или по Cron-выражению.
+     * Почасовой метод автоматического продвижения производственных статусов.
+     * <p>
+     * Выполняется с фиксированной частотой раз в час (3600000 мс). Алгоритм переходов:
+     * </p>
+     * <ul>
+     * <li>Через 3 дня после создания: <b>Принят</b> -> <b>В печати</b></li>
+     * <li>Через 10 дней после создания: <b>В печати</b> -> <b>Готов</b></li>
+     * <li>Через 11 дней после создания: <b>Готов</b> -> <b>Выдан</b></li>
+     * </ul>
      */
     @Scheduled(fixedRate = 3600000)
     @Transactional
@@ -38,7 +54,7 @@ public class OrderStatusScheduler {
                     order.setStatus("В печати");
                     orderRepository.save(order);
                     System.out.println("[Авто-Статус] Заказ №" + order.getOrderNumber() + " изменен на 'В печати' (прошло 3 дня).");
-                    continue; // Переходим к следующему заказу
+                    continue;
                 }
             }
 

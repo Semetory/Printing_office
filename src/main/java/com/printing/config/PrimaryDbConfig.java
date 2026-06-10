@@ -15,10 +15,19 @@ import jakarta.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
 import java.util.HashMap;
 
+/**
+ * Конфигурационный класс для основной базы данных приложения (Primary DB).
+ * <p>
+ * Отвечает за обработку основных бизнес-сущностей типографии (заказы, конфигурации цен, попытки входа).
+ * Все бины помечены аннотацией {@link Primary}, что указывает Spring использовать их по умолчанию.
+ * Исключает из области видимости подпакет {@code archive}, предотвращая пересечение и конфликты контекстов данных.
+ * </p>
+ *
+ * @author Дмитрий
+ * @version 1.0
+ */
 @Configuration
 @EnableJpaRepositories(
-        // Перечисляем базовые пакеты. Если у вас репозитории лежат прямо в com.printing.repository,
-        // но внутри есть папка archive, мы отсекаем её с помощью настроек фильтрации (excludeFilters)
         basePackages = "com.printing.repository",
         entityManagerFactoryRef = "entityManagerFactory",
         transactionManagerRef = "transactionManager",
@@ -29,6 +38,13 @@ import java.util.HashMap;
 )
 public class PrimaryDbConfig {
 
+    /**
+     * Создает и конфигурирует основной источник данных {@link DataSource} системы.
+     * Параметры подключения вычитываются из префикса {@code spring.datasource.primary}.
+     * Компонент является приоритетным (Primary) для приложения.
+     *
+     * @return основной экземпляр {@link DataSource}
+     */
     @Primary
     @Bean(name = "dataSource")
     @ConfigurationProperties(prefix = "spring.datasource.primary")
@@ -36,6 +52,18 @@ public class PrimaryDbConfig {
         return DataSourceBuilder.create().build();
     }
 
+    /**
+     * Создает основную фабрику менеджера сущностей {@link LocalContainerEntityManagerFactoryBean}.
+     * <p>
+     * Настраивает диалект PostgreSQLDialect и автообновление схем таблиц базы данных.
+     * Сканирует базовый пакет моделей {@code com.printing.model} для поиска сущностей,
+     * при этом за счет разделения пакетов исключает архивные таблицы.
+     * </p>
+     *
+     * @param builder утилитарный сборщик для JPA EntityManagerFactory
+     * @param dataSource основной источник данных, внедряемый по имени {@code dataSource}
+     * @return приоритетная фабрика менеджера сущностей для основных бизнес-задач
+     */
     @Primary
     @Bean(name = "entityManagerFactory")
     public LocalContainerEntityManagerFactoryBean entityManagerFactory(
@@ -48,13 +76,18 @@ public class PrimaryDbConfig {
         return builder
                 .dataSource(dataSource)
                 .properties(properties)
-                // Указываем пакеты с основными сущностями (Order, PriceConfig, LoginAttempt)
-                // Исключаем пакет archive, чтобы сущности не пересекались!
                 .packages("com.printing.model")
                 .persistenceUnit("primary")
                 .build();
     }
 
+    /**
+     * Создает и настраивает основной менеджер транзакций {@link PlatformTransactionManager} приложения.
+     * Необходим для корректной поддержки аннотаций {@code @Transactional} в сервисах обработки заказов.
+     *
+     * @param entityManagerFactory фабрика менеджера сущностей, внедряемая по имени {@code entityManagerFactory}
+     * @return основной менеджер транзакций операционной зоны приложения
+     */
     @Primary
     @Bean(name = "transactionManager")
     public PlatformTransactionManager transactionManager(

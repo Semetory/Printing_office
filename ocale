@@ -1,0 +1,4 @@
+Apache Maven Daemon (mvnd) 1.0.5 windows-amd64 native client (4b65db0749251270a181c0cbee184873f16fae7b)
+Terminal: org.jline.terminal.impl.jni.win.NativeWinSysTerminal
+Unable to parse command line options: Unrecognized option: -d
+Run 'mvnd --help' for available options.

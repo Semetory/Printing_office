@@ -5,63 +5,91 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Основная JPA-сущность операционной зоны, описывающая заказ на полиграфическую печать.
+ * <p>
+ * Отображается на таблицу {@code orders} и содержит в себе полные сведения о клиенте,
+ * калькуляции стоимости, выбранных услугах и связях с файлами макетов.
+ * </p>
+ *
+ * @author Дмитрий
+ * @version 1.0
+ */
 @Entity
 @Table(name = "orders")
-
 public class Order {
 
+    /** Время последнего изменения производственного статуса заказа. */
     @Column(name = "status_updated_at")
     private LocalDateTime statusUpdatedAt;
 
+    /** Уникальный числовой идентификатор (первичный ключ) заказа. */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** Уникальный текстовый рабочий номер заказа (генерируется по бизнес-алгоритму). */
     @Column(name = "order_number", nullable = false, columnDefinition = "varchar(255) default 'TEMPORARY_NUM'")
     private String orderNumber;
 
+    /** ФИО заказчика. */
     @Column(nullable = false)
     private String fullname;
 
+    /** Контактный телефон. */
     @Column(nullable = false)
     private String phone;
 
+    /** Электронный адрес. */
     @Column(nullable = false)
     private String email;
 
+    /** Выбранный формат продукции (A0-A6). */
     @Column(nullable = false)
     private String format;
 
+    /** Тип используемого материала (бумаги/картона). */
     @Column(nullable = false)
     private String paper;
 
+    /** Общий тираж заказа. */
     @Column(nullable = false)
     private Integer quantity;
 
+    /** Способ оплаты. */
     private String payment;
 
+    /** Финальная подтвержденная стоимость заказа, рассчитанная бэкендом. */
     @Column(nullable = false)
     private Integer total;
 
+    /** Список текстовых имен файлов макетов, загруженных клиентом. */
     @ElementCollection
     @CollectionTable(name = "order_files", joinColumns = @JoinColumn(name = "order_id"))
     @Column(name = "filename")
     private List<String> files = new ArrayList<>();
 
+    /** Список системных ключей выбранных дополнительных постпечатных услуг (например, lamination, folding). */
     @ElementCollection
     @CollectionTable(name = "order_services", joinColumns = @JoinColumn(name = "order_id"))
     @Column(name = "service_key")
     private List<String> services;
 
+    /** Текущий статус обработки заказа (по умолчанию "Принят"). */
     private String status = "Принят";
 
+    /** Автоматическая временная метка создания заказа. */
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    /**
+     * JPA Callback-метод, выполняемый автоматически перед первоначальным сохранением (инсертом) записи в БД.
+     * Инициализирует дату создания заказа и синхронизирует с ней время установки начального статуса.
+     */
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
-        this.statusUpdatedAt = LocalDateTime.now(); // При создании заказа дата статуса совпадает с датой создания
+        this.statusUpdatedAt = LocalDateTime.now();
     }
 
     // Геттеры и сеттеры

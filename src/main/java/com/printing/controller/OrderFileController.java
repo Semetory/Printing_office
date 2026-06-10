@@ -11,11 +11,21 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * REST-контроллер для изолированной обработки файлов макетов, привязанных к заказам.
+ * <p>
+ * Обеспечивает потоковое сохранение макетов напрямую в СУБД в виде бинарных массивов (BLOB/BYTEA),
+ * чтение метаданных для администратора, а также контролируемое скачивание файлов
+ * с поддержкой корректного кодирования кириллических имен макетов в HTTP-заголовках.
+ * </p>
+ *
+ * @author Дмитрий
+ * @version 1.0
+ */
 @RestController
 @RequestMapping("/api/orders")
-@CrossOrigin(origins = "*") // Настрой под свой фронтенд при необходимости
+@CrossOrigin(origins = "*")
 public class OrderFileController {
-
 
     @Autowired
     private com.printing.repository.OrderFileStorageRepository fileStorageRepository;
@@ -23,7 +33,13 @@ public class OrderFileController {
     @Autowired
     private OrderService orderService;
 
-    // 1. Эндпоинт для загрузки файла к уже созданному заказу
+    /**
+     * Загружает бинарный файл макета и привязывает его к ранее созданному идентификатору заказа.
+     *
+     * @param orderId числовой первичный ключ заказа
+     * @param file многокомпонентный объект загружаемого файла (Multipart)
+     * @return {@link ResponseEntity} с текстовым результатом выполнения операции
+     */
     @PostMapping("/{orderId}/upload")
     public ResponseEntity<String> uploadFile(@PathVariable Long orderId, @RequestParam("file") MultipartFile file) {
         try {
@@ -36,27 +52,40 @@ public class OrderFileController {
         }
     }
 
-    // 2. Эндпоинт для Администратора: получить список файлов заказа
+    /**
+     * Запрашивает перечень всех файлов, относящихся к заказу.
+     * <p>
+     * Для минимизации сетевого трафика и предотвращения перегрузки оперативной памяти
+     * массивы байт (тяжелый бинарный контент) принудительно обнуляются перед сериализацией.
+     * </p>
+     *
+     * @param orderId числовой идентификатор заказа
+     * @return {@link ResponseEntity} со списком объектов {@link OrderFileStorage} без бинарного наполнения
+     */
     @GetMapping("/{orderId}/files")
     public ResponseEntity<List<OrderFileStorage>> getOrderFiles(@PathVariable Long orderId) {
         List<OrderFileStorage> files = orderService.getFilesByOrderId(orderId);
-        // Очищаем байты данных в списке, чтобы не перегружать сеть метаданными
         files.forEach(f -> f.setData(null));
         return ResponseEntity.ok(files);
     }
 
-    // 3. Эндпоинт для Администратора: СКАЧАТЬ конкретный файл из БД по его ID таблицы хранения
+    /**
+     * Позволяет скачать файл макета из базы данных по его индивидуальному идентификационному ключу хранения.
+     * <p>
+     * Производит трансляцию и кодирование оригинального имени файла по спецификации UTF-8 (RFC 5987)
+     * для предотвращения порчи кириллического названия (искажения кодировки) в целевом браузере сотрудника.
+     * </p>
+     *
+     * @param fileId уникальный ID записи в таблице файлового хранилища
+     * @return {@link ResponseEntity} с байтовым массивом содержимого файла и заголовками скачивания
+     */
     @GetMapping("/files/download/{fileId}")
     public ResponseEntity<byte[]> downloadFile(@PathVariable Long fileId) {
-        // 1. Используем репозиторий напрямую (или через новый метод сервиса),
-        // чтобы найти файл именно по ID самой записи в таблице хранения, а не по ID заказа!
         return fileStorageRepository.findById(fileId)
                 .map(file -> {
-                    // 2. Безопасно кодируем русское имя файла для HTTP-заголовков
                     String encodedFileName = java.net.URLEncoder.encode(file.getFileName(), java.nio.charset.StandardCharsets.UTF_8)
-                            .replaceAll("\\+", "%20"); // Заменяем плюсы на красивые пробелы
+                            .replaceAll("\\+", "%20");
 
-                    // Формируем правильный заголовок CONTENT_DISPOSITION для браузеров
                     String contentDisposition = "attachment; filename*=UTF-8''" + encodedFileName;
 
                     return ResponseEntity.ok()
