@@ -51,6 +51,15 @@ public class AdminController {
     @Value("${spring.datasource.primary.password}")
     private String dbPassword;
 
+    @Value("${spring.datasource.archive.jdbc-url:#{null}}")
+    private String archiveDbUrl;
+
+    @Value("${spring.datasource.archive.username:#{null}}")
+    private String archiveDbUser;
+
+    @Value("${spring.datasource.archive.password:#{null}}")
+    private String archiveDbPassword;
+
     @Autowired
     private OrderRepository orderRepository;
 
@@ -229,6 +238,97 @@ public class AdminController {
             return ResponseEntity.ok("Все таблицы успешно очищены, прайс-лист пересоздан!");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Ошибка очистки: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Создает резервную копию (дамп) архивной базы данных и передает ее клиенту.
+     *
+     * @param response объект HTTP-ответа сервлета для записи бинарного потока файла
+     */
+    @GetMapping("/archive/download")
+    public void downloadArchiveDatabase(jakarta.servlet.http.HttpServletResponse response) {
+        // Если специфичные настройки архива отсутствуют, откатываемся на параметры основной БД
+        String url = (archiveDbUrl != null) ? archiveDbUrl : dbUrl;
+        String user = (archiveDbUser != null) ? archiveDbUser : dbUser;
+        String password = (archiveDbPassword != null) ? archiveDbPassword : dbPassword;
+        String dbName = extractDbName(url);
+
+        response.setContentType("application/octet-stream");
+        response.setHeader("Content-Disposition", "attachment; filename=\"archive_backup.sql\"");
+
+        try {
+            ProcessBuilder pb = new ProcessBuilder(
+                    "pg_dump", "-h", "127.0.0.1", "-U", user, "-w", "-F", "p", dbName
+            );
+            pb.environment().put("PGPASSWORD", password);
+            pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+
+            Process process = pb.start();
+
+            try (java.io.InputStream is = process.getInputStream();
+                 java.io.OutputStream os = response.getOutputStream()) {
+                byte[] buffer = new byte[4096];
+                int bytesRead;
+                while ((bytesRead = is.read(buffer)) != -1) {
+                    os.write(buffer, 0, bytesRead);
+                }
+                os.flush();
+            }
+            process.waitFor();
+            logSystemEvent("Выгрузка архива", "Дамп архивной БД успешно скачан администратором.");
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Восстанавливает структуру и данные архивной базы данных из загруженного SQL-файла.
+     * Перед импортом каскадно очищает текущую таблицу архивных заказов.
+     *
+     * @param file загружаемый SQL-файл резервной копии архива
+     * @return {@link ResponseEntity} со статусным сообщением
+     */
+    @PostMapping("/archive/upload")
+    public ResponseEntity<String> uploadArchiveDatabase(@RequestParam("file") MultipartFile file) {
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().body("Файл архива пуст");
+        }
+
+        try {
+            String url = (archiveDbUrl != null) ? archiveDbUrl : dbUrl;
+            String user = (archiveDbUser != null) ? archiveDbUser : dbUser;
+            String password = (archiveDbPassword != null) ? archiveDbPassword : dbPassword;
+            String dbName = extractDbName(url);
+
+            // Создаем временный файл для развертывания
+            File tempFile = File.createTempFile("archive_restore_", ".sql");
+            file.transferTo(tempFile);
+
+            // Очищаем старые данные перед импортом
+            archiveOrderRepository.deleteAll();
+
+            ProcessBuilder pb = new ProcessBuilder(
+                    "psql", "-h", "127.0.0.1", "-U", user, "-d", dbName, "-f", tempFile.getAbsolutePath()
+            );
+            pb.environment().put("PGPASSWORD", password);
+            pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+
+            Process process = pb.start();
+            int exitCode = process.waitFor();
+
+            tempFile.delete();
+
+            if (exitCode == 0) {
+                logSystemEvent("Загрузка архива", "Архивная БД успешно восстановлена из резервной копии: " + file.getOriginalFilename());
+                return ResponseEntity.ok("База данных архива успешно восстановлена!");
+            } else {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Ошибка psql при импорте архива. Код: " + exitCode);
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Ошибка импорта архива: " + e.getMessage());
         }
     }
 

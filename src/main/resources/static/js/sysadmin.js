@@ -99,6 +99,51 @@ document.getElementById('btnClear').addEventListener('click', async () => {
     }
 });
 
+// 4. СКАЧАТЬ ДАМП БД АРХИВА
+async function downloadArchive() {
+    printLog('Подготовка дампа архивной базы данных...');
+    try {
+        // Прямой переход по ссылке инициирует скачивание файла браузером
+        window.location.href = '/api/admin/archive/download';
+        printLog('Запрос на скачивание архива отправлен.');
+    } catch (err) {
+        printLog('Ошибка при скачивании архива: ' + err.message, true);
+    }
+}
+
+// 5. ЗАГРУЗИТЬ ДАМП БД АРХИВА
+async function uploadArchive() {
+    const archiveInput = document.getElementById('archiveFile');
+    if (!archiveInput.files.length) return;
+
+    const file = archiveInput.files[0];
+    if (!confirm(`Вы уверены, что хотите полностью заменить данные в АРХИВЕ файлом ${file.name}? Текущие архивные данные будут удалены!`)) {
+        archiveInput.value = '';
+        return;
+    }
+
+    printLog('Загрузка дампа архива на сервер...');
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        const response = await fetch('/api/admin/archive/upload', {
+            method: 'POST',
+            body: formData
+        });
+        const text = await response.text();
+
+        if (!response.ok) throw new Error(text);
+
+        printLog(text);
+        loadSystemLogs(); // Обновляем логи, так как бэкенд зафиксирует импорт
+    } catch (err) {
+        printLog('Ошибка импорта архива: ' + err.message, true);
+    } finally {
+        archiveInput.value = ''; // Сбрасываем input
+    }
+}
+
 // Выход из панели
 function logout() {
     localStorage.removeItem('userRole');
